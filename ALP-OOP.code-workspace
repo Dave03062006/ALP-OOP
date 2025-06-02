@@ -1,0 +1,25 @@
+{
+  "folders": [
+	{
+		"name": "ALP-OOP",
+		"path": "."
+	},
+	{
+		"name": ".vscode",
+		"path": "../../../TugasUC/OOP/Latihan/SwingTrial/.vscode"
+	},
+	{
+		"name": "bin",
+		"path": "../../../TugasUC/OOP/Latihan/SwingTrial/bin"
+	},
+	{
+		"name": "lib",
+		"path": "../../../TugasUC/OOP/Latihan/SwingTrial/lib"
+	},
+	{
+		"name": "medical-system-1",
+		"path": "../../../TugasUC/OOP/Latihan/SwingTrial/medical-system-1"
+	}
+],
+  "settings": {}
+}
