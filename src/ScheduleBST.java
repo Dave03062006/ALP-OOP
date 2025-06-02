@@ -11,6 +11,8 @@ public class ScheduleBST {
 
     // semua data schedule itu waktu masuk ke tree bakal di sort sama tree nya mana yang masuk anak kiri mana yang masuk anak kanan pake method isBefore sama isAfter itu (ada di code nya)
 
+
+    // halooo halo test
     public ScheduleBST insert(LocalTime time) {
         // If this is an empty node, create a new node with the time
         if (this.root == null) {
