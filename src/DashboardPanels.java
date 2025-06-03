@@ -527,7 +527,7 @@ public class DashboardPanels {
     }
 
     /**
-     * Creates a panel for patients to book appointments
+     * Creates a panel for patients to book appointments with a multi-step process
      */
     public static JPanel createBookAppointmentPanel(CardLayout mainCardLayout, JPanel mainCardPanel,
             String patientDashboardPanelName, AppointmentBookingHandler bookingHandler) {
@@ -535,6 +535,12 @@ public class DashboardPanels {
         JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout());
         panel.setBackground(BACKGROUND_COLOR);
+
+        // Create a card layout for the booking steps
+        JPanel bookingStepsPanel = new JPanel();
+        CardLayout bookingStepsLayout = new CardLayout();
+        bookingStepsPanel.setLayout(bookingStepsLayout);
+        bookingStepsPanel.setBackground(BACKGROUND_COLOR);
 
         // Header
         JPanel headerPanel = new JPanel();
@@ -551,53 +557,45 @@ public class DashboardPanels {
         backButton.setBackground(new Color(189, 195, 199));
         backButton.setForeground(TEXT_COLOR);
         backButton.setFocusPainted(false);
-        backButton.addActionListener(e -> mainCardLayout.show(mainCardPanel, patientDashboardPanelName));
+        backButton.addActionListener(e -> {
+            // Reset the booking steps to show STEP1 when returning to dashboard
+            bookingStepsLayout.first(bookingStepsPanel);
+            mainCardLayout.show(mainCardPanel, patientDashboardPanelName);
+        });
         headerPanel.add(backButton, BorderLayout.EAST);
 
         panel.add(headerPanel, BorderLayout.NORTH);
 
-        // Form content
-        JPanel contentPanel = new JPanel();
-        contentPanel.setLayout(new GridBagLayout());
-        contentPanel.setBackground(BACKGROUND_COLOR);
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
+        // ======== STEP 1: Select specialist and date ========
+        JPanel step1Panel = new JPanel();
+        step1Panel.setLayout(new GridBagLayout());
+        step1Panel.setBackground(BACKGROUND_COLOR);
+        step1Panel.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.gridwidth = 1;
 
-        // Time selector
+        // Step indicator
+        JLabel step1Label = new JLabel("Step 1: Select Specialist and Date");
+        step1Label.setFont(new Font("Times New Roman", Font.BOLD, 16));
+        step1Label.setForeground(PATIENT_COLOR);
         gbc.gridx = 0;
         gbc.gridy = 0;
-        JLabel timeLabel = new JLabel("Preferred Time:");
-        timeLabel.setFont(new Font("Times New Roman", Font.BOLD, 14));
-        contentPanel.add(timeLabel, gbc);
+        gbc.gridwidth = 2;
+        step1Panel.add(step1Label, gbc);
 
-        gbc.gridx = 1;
-        // Create 24-hour time options with 15-minute intervals
-        JComboBox<String> timeDropdown = new JComboBox<>(createTimeOptions());
-        timeDropdown.setSelectedIndex(32); // Default to 8:00 AM (32nd item)
-        contentPanel.add(timeDropdown, gbc);
-
-        // Day selector
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        JLabel dayLabel = new JLabel("Day of Week:");
-        dayLabel.setFont(new Font("Times New Roman", Font.BOLD, 14));
-        contentPanel.add(dayLabel, gbc);
-
-        gbc.gridx = 1;
-        String[] days = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
-        JComboBox<String> dayDropdown = new JComboBox<>(days);
-        contentPanel.add(dayDropdown, gbc);
+        gbc.gridy++;
+        step1Panel.add(Box.createVerticalStrut(20), gbc); // Add some space
+        gbc.gridwidth = 1;
 
         // Specialist type dropdown
         gbc.gridx = 0;
         gbc.gridy = 2;
         JLabel specialistLabel = new JLabel("Specialist Type:");
         specialistLabel.setFont(new Font("Times New Roman", Font.BOLD, 14));
-        contentPanel.add(specialistLabel, gbc);
+        step1Panel.add(specialistLabel, gbc);
 
         gbc.gridx = 1;
         String[] specialistTypes = {
@@ -611,39 +609,171 @@ public class DashboardPanels {
                 "Ophthalmologist"
         };
         JComboBox<String> specialistDropdown = new JComboBox<>(specialistTypes);
-        contentPanel.add(specialistDropdown, gbc);
+        step1Panel.add(specialistDropdown, gbc);
 
-        // Reason text area
+        // Date selection
         gbc.gridx = 0;
         gbc.gridy = 3;
-        JLabel reasonLabel = new JLabel("Reason/Health Issue:");
-        reasonLabel.setFont(new Font("Times New Roman", Font.BOLD, 14));
-        contentPanel.add(reasonLabel, gbc);
+        JLabel dateLabel = new JLabel("Appointment Date:");
+        dateLabel.setFont(new Font("Times New Roman", Font.BOLD, 14));
+        step1Panel.add(dateLabel, gbc);
 
+        gbc.gridx = 1;
+        // Using JSpinner with SpinnerDateModel for date selection
+        Calendar calendar = Calendar.getInstance();
+        Date initialDate = calendar.getTime();
+        calendar.add(Calendar.YEAR, 1); // Allow booking up to 1 year in advance
+        Date latestDate = calendar.getTime();
+        calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_MONTH, 1); // Start from tomorrow
+        Date earliestDate = calendar.getTime();
+
+        SpinnerDateModel dateModel = new SpinnerDateModel(earliestDate, earliestDate, latestDate,
+                Calendar.DAY_OF_MONTH);
+        JSpinner dateSpinner = new JSpinner(dateModel);
+        dateSpinner.setEditor(new JSpinner.DateEditor(dateSpinner, "dd/MM/yyyy"));
+        step1Panel.add(dateSpinner, gbc);
+
+        // Next button
         gbc.gridx = 0;
         gbc.gridy = 4;
         gbc.gridwidth = 2;
-        JTextArea reasonTextArea = new JTextArea(5, 20);
+        gbc.insets = new Insets(30, 10, 10, 10);
+        JButton nextToStep2Button = new JButton("Continue to Select Time");
+        nextToStep2Button.setBackground(PATIENT_COLOR);
+        nextToStep2Button.setForeground(Color.black);
+        nextToStep2Button.setFont(new Font("Times New Roman", Font.BOLD, 14));
+        nextToStep2Button.setFocusPainted(false);
+        nextToStep2Button.addActionListener(e -> {
+            bookingStepsLayout.show(bookingStepsPanel, "STEP2");
+        });
+        step1Panel.add(nextToStep2Button, gbc);
+
+        // ======== STEP 2: Select time ========
+        JPanel step2Panel = new JPanel();
+        step2Panel.setLayout(new GridBagLayout());
+        step2Panel.setBackground(BACKGROUND_COLOR);
+        step2Panel.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
+
+        // Step indicator
+        JLabel step2Label = new JLabel("Step 2: Select Appointment Time");
+        step2Label.setFont(new Font("Times New Roman", Font.BOLD, 16));
+        step2Label.setForeground(PATIENT_COLOR);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        step2Panel.add(step2Label, gbc);
+
+        gbc.gridy++;
+        step2Panel.add(Box.createVerticalStrut(20), gbc); // Add some space
+        gbc.gridwidth = 1;
+
+        // Time selector
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        JLabel timeLabel = new JLabel("Select Time:");
+        timeLabel.setFont(new Font("Times New Roman", Font.BOLD, 14));
+        step2Panel.add(timeLabel, gbc);
+
+        gbc.gridx = 1;
+        // Use the existing time options with 15-minute intervals
+        JComboBox<String> timeDropdown = new JComboBox<>(createTimeOptions());
+        timeDropdown.setSelectedIndex(32); // Default to 8:00 AM
+        step2Panel.add(timeDropdown, gbc);
+
+        // Navigation buttons
+        JPanel step2ButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        step2ButtonPanel.setBackground(BACKGROUND_COLOR);
+
+        JButton backToStep1Button = new JButton("Back");
+        backToStep1Button.setBackground(new Color(189, 195, 199));
+        backToStep1Button.setForeground(TEXT_COLOR);
+        backToStep1Button.setFont(new Font("Times New Roman", Font.BOLD, 14));
+        backToStep1Button.setFocusPainted(false);
+        backToStep1Button.addActionListener(e -> {
+            bookingStepsLayout.show(bookingStepsPanel, "STEP1");
+        });
+        step2ButtonPanel.add(backToStep1Button);
+
+        JButton nextToStep3Button = new JButton("Continue to Details");
+        nextToStep3Button.setBackground(PATIENT_COLOR);
+        nextToStep3Button.setForeground(Color.black);
+        nextToStep3Button.setFont(new Font("Times New Roman", Font.BOLD, 14));
+        nextToStep3Button.setFocusPainted(false);
+        nextToStep3Button.addActionListener(e -> {
+            bookingStepsLayout.show(bookingStepsPanel, "STEP3");
+        });
+        step2ButtonPanel.add(nextToStep3Button);
+
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 2;
+        gbc.insets = new Insets(30, 10, 10, 10);
+        step2Panel.add(step2ButtonPanel, gbc);
+
+        // ======== STEP 3: Health concern and confirm booking ========
+        JPanel step3Panel = new JPanel();
+        step3Panel.setLayout(new GridBagLayout());
+        step3Panel.setBackground(BACKGROUND_COLOR);
+        step3Panel.setBorder(BorderFactory.createEmptyBorder(30, 50, 30, 50));
+
+        // Step indicator
+        JLabel step3Label = new JLabel("Step 3: Health Concern & Confirmation");
+        step3Label.setFont(new Font("Times New Roman", Font.BOLD, 16));
+        step3Label.setForeground(PATIENT_COLOR);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        step3Panel.add(step3Label, gbc);
+
+        gbc.gridy++;
+        step3Panel.add(Box.createVerticalStrut(20), gbc); // Add some space
+
+        // Health concern text area
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 2;
+        JLabel reasonLabel = new JLabel("Please describe your health concern:");
+        reasonLabel.setFont(new Font("Times New Roman", Font.BOLD, 14));
+        step3Panel.add(reasonLabel, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        JTextArea reasonTextArea = new JTextArea(5, 25);
         reasonTextArea.setLineWrap(true);
         reasonTextArea.setWrapStyleWord(true);
         JScrollPane scrollPane = new JScrollPane(reasonTextArea);
-        contentPanel.add(scrollPane, gbc);
+        step3Panel.add(scrollPane, gbc);
 
-        // Book button
-        gbc.gridx = 0;
-        gbc.gridy = 5;
-        gbc.gridwidth = 2;
-        gbc.insets = new Insets(30, 10, 10, 10);
-        JButton bookButton = new JButton("Book Appointment");
-        bookButton.setBackground(PATIENT_COLOR);
-        bookButton.setForeground(Color.black);
-        bookButton.setFocusPainted(false);
-        bookButton.addActionListener(e -> {
+        // Navigation and confirmation buttons
+        JPanel step3ButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        step3ButtonPanel.setBackground(BACKGROUND_COLOR);
+
+        JButton backToStep2Button = new JButton("Back");
+        backToStep2Button.setBackground(new Color(189, 195, 199));
+        backToStep2Button.setForeground(TEXT_COLOR);
+        backToStep2Button.setFont(new Font("Times New Roman", Font.BOLD, 14));
+        backToStep2Button.setFocusPainted(false);
+        backToStep2Button.addActionListener(e -> {
+            bookingStepsLayout.show(bookingStepsPanel, "STEP2");
+        });
+        step3ButtonPanel.add(backToStep2Button);
+
+        JButton confirmButton = new JButton("Check Availability & Book");
+        confirmButton.setBackground(PATIENT_COLOR);
+        confirmButton.setForeground(Color.black);
+        confirmButton.setFont(new Font("Times New Roman", Font.BOLD, 14));
+        confirmButton.setFocusPainted(false);
+        confirmButton.addActionListener(e -> {
             // Validate inputs
-            String selectedTime = (String) timeDropdown.getSelectedItem();
-            String selectedDay = (String) dayDropdown.getSelectedItem();
             String selectedSpecialist = (String) specialistDropdown.getSelectedItem();
+            Date selectedDate = (Date) dateSpinner.getValue();
+            String selectedTime = (String) timeDropdown.getSelectedItem();
             String reason = reasonTextArea.getText().trim();
+
+            // Format the date for display
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+            String formattedDate = dateFormat.format(selectedDate);
 
             if (reason.isEmpty()) {
                 JOptionPane.showMessageDialog(panel,
@@ -653,31 +783,81 @@ public class DashboardPanels {
                 return;
             }
 
-            // Call booking handler with the selected time and day
+            // Check appointment availability
+            boolean isAvailable = bookingHandler.checkAvailability(
+                    formattedDate, selectedTime, selectedSpecialist);
+
+            if (!isAvailable) {
+                JOptionPane.showMessageDialog(panel,
+                        "Sorry, the selected time is not available. Please choose a different time.",
+                        "Time Not Available",
+                        JOptionPane.WARNING_MESSAGE);
+                // Go back to step 2 to select another time
+                bookingStepsLayout.show(bookingStepsPanel, "STEP2");
+                return;
+            }
+
+            // If available, book the appointment
             boolean success = bookingHandler.handleAppointmentBooking(
-                    selectedDay, selectedTime, selectedSpecialist, reason);
+                    formattedDate, selectedTime, selectedSpecialist, reason);
 
             if (success) {
                 JOptionPane.showMessageDialog(panel,
-                        "Appointment booked successfully for " + selectedDay +
-                                " at " + selectedTime + " with " + selectedSpecialist,
+                        "Appointment booked successfully for " + formattedDate +
+                                " at " + selectedTime + " with a " + selectedSpecialist,
                         "Booking Success",
                         JOptionPane.INFORMATION_MESSAGE);
+
+                // Reset back to the first step before returning to dashboard
+                bookingStepsLayout.first(bookingStepsPanel);
+
+                // Also clear the form fields for next time
+                reasonTextArea.setText("");
 
                 // Return to dashboard
                 mainCardLayout.show(mainCardPanel, patientDashboardPanelName);
             }
         });
-        contentPanel.add(bookButton, gbc);
+        step3ButtonPanel.add(confirmButton);
 
-        panel.add(contentPanel, BorderLayout.CENTER);
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        gbc.insets = new Insets(30, 10, 10, 10);
+        step3Panel.add(step3ButtonPanel, gbc);
+
+        // Add all step panels to the booking steps panel with card layout
+        bookingStepsPanel.add(step1Panel, "STEP1");
+        bookingStepsPanel.add(step2Panel, "STEP2");
+        bookingStepsPanel.add(step3Panel, "STEP3");
+
+        // Show first step by default
+        bookingStepsLayout.show(bookingStepsPanel, "STEP1");
+
+        panel.add(bookingStepsPanel, BorderLayout.CENTER);
 
         return panel;
     }
 
     /**
-     * Helper method to create time options with 15-minute intervals in 24-hour
-     * format
+     * Helper method to create time options with 30-minute intervals
+     */
+    private static String[] createTimeOptionsHalfHour() {
+        String[] timeOptions = new String[48]; // 24 hours * 2 intervals = 48 options
+        int index = 0;
+
+        for (int hour = 0; hour < 24; hour++) {
+            for (int minute = 0; minute < 60; minute += 30) {
+                String hourStr = String.format("%02d", hour);
+                String minuteStr = String.format("%02d", minute);
+                timeOptions[index++] = hourStr + ":" + minuteStr;
+            }
+        }
+
+        return timeOptions;
+    }
+
+    /**
+     * Helper method to create time options with 15-minute intervals
      */
     private static String[] createTimeOptions() {
         String[] timeOptions = new String[96]; // 24 hours * 4 intervals = 96 options
@@ -1106,7 +1286,9 @@ public class DashboardPanels {
      * Interface for handling appointment bookings
      */
     public interface AppointmentBookingHandler {
-        boolean handleAppointmentBooking(String day, String time, String specialistType, String reason);
+        boolean handleAppointmentBooking(String date, String time, String specialistType, String reason);
+
+        boolean checkAvailability(String date, String time, String specialistType);
     }
 
     /**
