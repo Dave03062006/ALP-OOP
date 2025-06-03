@@ -236,7 +236,21 @@ class MainFrame extends JPanel {
                 // Create appointment booking panel
                 JPanel bookAppointment = DashboardPanels.createBookAppointmentPanel(
                                 cardLayout, cardPanel, PATIENT_DASHBOARD_PANEL,
-                                (DashboardPanels.AppointmentBookingHandler) (day, time, specialistType, reason) -> handleAppointmentBooking(day, time, specialistType, reason));
+                                new DashboardPanels.AppointmentBookingHandler() {
+                                        @Override
+                                        public boolean checkAvailability(String day, String time,
+                                                        String specialistType) {
+                                                // Implement availability check
+                                                return true;
+                                        }
+
+                                        @Override
+                                        public boolean handleAppointmentBooking(String day, String time,
+                                                        String specialistType, String reason) {
+                                                return MainFrame.this.handleAppointmentBooking(day, time,
+                                                                specialistType, reason);
+                                        }
+                                });
                 bookAppointment.setName(BOOK_APPOINTMENT_PANEL);
                 // Create appointments viewing panel
                 JPanel viewAppointments = DashboardPanels.createViewAppointmentsPanel(

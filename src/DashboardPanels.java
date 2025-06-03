@@ -536,6 +536,12 @@ public class DashboardPanels {
         panel.setLayout(new BorderLayout());
         panel.setBackground(BACKGROUND_COLOR);
 
+        // Create a card layout for the booking steps
+        JPanel bookingStepsPanel = new JPanel();
+        CardLayout bookingStepsLayout = new CardLayout();
+        bookingStepsPanel.setLayout(bookingStepsLayout);
+        bookingStepsPanel.setBackground(BACKGROUND_COLOR);
+
         // Header
         JPanel headerPanel = new JPanel();
         headerPanel.setBackground(PATIENT_COLOR);
@@ -551,16 +557,14 @@ public class DashboardPanels {
         backButton.setBackground(new Color(189, 195, 199));
         backButton.setForeground(TEXT_COLOR);
         backButton.setFocusPainted(false);
-        backButton.addActionListener(e -> mainCardLayout.show(mainCardPanel, patientDashboardPanelName));
+        backButton.addActionListener(e -> {
+            // Reset the booking steps to show STEP1 when returning to dashboard
+            bookingStepsLayout.first(bookingStepsPanel);
+            mainCardLayout.show(mainCardPanel, patientDashboardPanelName);
+        });
         headerPanel.add(backButton, BorderLayout.EAST);
 
         panel.add(headerPanel, BorderLayout.NORTH);
-
-        // Create a card layout for the booking steps
-        JPanel bookingStepsPanel = new JPanel();
-        CardLayout bookingStepsLayout = new CardLayout();
-        bookingStepsPanel.setLayout(bookingStepsLayout);
-        bookingStepsPanel.setBackground(BACKGROUND_COLOR);
 
         // ======== STEP 1: Select specialist and date ========
         JPanel step1Panel = new JPanel();
@@ -637,7 +641,7 @@ public class DashboardPanels {
         gbc.insets = new Insets(30, 10, 10, 10);
         JButton nextToStep2Button = new JButton("Continue to Select Time");
         nextToStep2Button.setBackground(PATIENT_COLOR);
-        nextToStep2Button.setForeground(Color.white);
+        nextToStep2Button.setForeground(Color.black);
         nextToStep2Button.setFont(new Font("Times New Roman", Font.BOLD, 14));
         nextToStep2Button.setFocusPainted(false);
         nextToStep2Button.addActionListener(e -> {
@@ -693,7 +697,7 @@ public class DashboardPanels {
 
         JButton nextToStep3Button = new JButton("Continue to Details");
         nextToStep3Button.setBackground(PATIENT_COLOR);
-        nextToStep3Button.setForeground(Color.white);
+        nextToStep3Button.setForeground(Color.black);
         nextToStep3Button.setFont(new Font("Times New Roman", Font.BOLD, 14));
         nextToStep3Button.setFocusPainted(false);
         nextToStep3Button.addActionListener(e -> {
@@ -757,7 +761,7 @@ public class DashboardPanels {
 
         JButton confirmButton = new JButton("Check Availability & Book");
         confirmButton.setBackground(PATIENT_COLOR);
-        confirmButton.setForeground(Color.white);
+        confirmButton.setForeground(Color.black);
         confirmButton.setFont(new Font("Times New Roman", Font.BOLD, 14));
         confirmButton.setFocusPainted(false);
         confirmButton.addActionListener(e -> {
@@ -804,6 +808,12 @@ public class DashboardPanels {
                         "Booking Success",
                         JOptionPane.INFORMATION_MESSAGE);
 
+                // Reset back to the first step before returning to dashboard
+                bookingStepsLayout.first(bookingStepsPanel);
+
+                // Also clear the form fields for next time
+                reasonTextArea.setText("");
+
                 // Return to dashboard
                 mainCardLayout.show(mainCardPanel, patientDashboardPanelName);
             }
@@ -829,8 +839,25 @@ public class DashboardPanels {
     }
 
     /**
-     * Helper method to create time options with 15-minute intervals in 24-hour
-     * format
+     * Helper method to create time options with 30-minute intervals
+     */
+    private static String[] createTimeOptionsHalfHour() {
+        String[] timeOptions = new String[48]; // 24 hours * 2 intervals = 48 options
+        int index = 0;
+
+        for (int hour = 0; hour < 24; hour++) {
+            for (int minute = 0; minute < 60; minute += 30) {
+                String hourStr = String.format("%02d", hour);
+                String minuteStr = String.format("%02d", minute);
+                timeOptions[index++] = hourStr + ":" + minuteStr;
+            }
+        }
+
+        return timeOptions;
+    }
+
+    /**
+     * Helper method to create time options with 15-minute intervals
      */
     private static String[] createTimeOptions() {
         String[] timeOptions = new String[96]; // 24 hours * 4 intervals = 96 options
