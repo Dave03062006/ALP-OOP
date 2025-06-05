@@ -1,4 +1,5 @@
 import java.util.Scanner;
+import java.sql.*;
 
 public class Main {
 
@@ -76,7 +77,7 @@ your healthcare experience.");
 
     public void registerDoctor() {
         System.out.println("Registering as Doctor...");
-        
+
     }
 
     public void registerPharmacist() {
@@ -113,9 +114,45 @@ your healthcare experience.");
             ;
     }
 
-    public void loginPatient() {
+    public boolean loginPatient() {
         System.out.println("Logging in as Patient...");
-        // Logic for patient login
+        System.out.println("\n--- PATIENT LOGIN ---");
+        System.out.print("Enter email: ");
+        String email = s.nextLine();
+        System.out.print("Enter password: ");
+        String password = s.nextLine();
+
+        Patient temPatient = new Patient(email, password, "", "");
+        try {
+            Connection conn = DatabaseConnect.getConnection();
+            String sql = "SELECT * FROM patient WHERE email = ? AND password = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, email);
+            pstmt.setString(2, password);
+
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                currentPatient = new Patient(
+                        rs.getInt("patient_id"),
+                        rs.getString("email"),
+                        rs.getString("password"),
+                        rs.getString("full_name"),
+                        rs.getString("phone_number"));
+
+                System.out.println("✅ Login successful! Welcome, " + currentPatient.getFullName());
+                return true;
+            } else {
+                System.out.println("❌ Invalid credentials. Please try again.");
+                return false;
+            }
+
+        } catch (Exception e) {
+            System.out.println("❌ Login error: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+
     }
 
     public void loginDoctor() {
@@ -142,8 +179,8 @@ your healthcare experience.");
             System.out.println("6. Logout");
             System.out.println("=".repeat(50));
 
-            int choice = getIntInput();
-            
+            int choice = s.nextInt();
+
             switch (choice) {
                 case 1:
                     viewPatientProfile();
@@ -171,18 +208,73 @@ your healthcare experience.");
     }
 
     public void viewPatientProfile() {
+        System.out.println("\n--- MY PROFILE ---");
+        System.out.println("Patient ID: " + currentPatient.getPatientId());
+        System.out.println("Name: " + currentPatient.getFullName());
+        System.out.println("Email: " + currentPatient.getEmail());
+        System.out.println("Phone: " + currentPatient.getPhoneNumber());
+
+        System.out.println("(0) Back to Dashboard");
+        int choice = s.nextInt();
+        if (choice == 0) {
+            patientDashboard();
+        } else {
+            System.out.println("invalidChoice");
+        }
     }
 
-    public void updatePatientProfile(){
+    public void updatePatientProfile() {
+        System.out.println("\n--- UPDATE PROFILE ---");
+        System.out.println("Current Name: " + currentPatient.getFullName());
+        System.out.print("Enter new name (or press Enter to keep current): ");
+        String newName = s.nextLine();
+        if (newName.trim().isEmpty()) {
+            newName = currentPatient.getFullName();
+        }
+        
+        System.out.println("Current Email: " + currentPatient.getEmail());
+        System.out.print("Enter new email (or press Enter to keep current): ");
+        String newEmail = s.nextLine();
+        if (newEmail.trim().isEmpty()) {
+            newEmail = currentPatient.getEmail();
+        }
+        
+        System.out.println("Current Phone: " + currentPatient.getPhoneNumber());
+        System.out.print("Enter new phone (or press Enter to keep current): ");
+        String newPhone = s.nextLine();
+        if (newPhone.trim().isEmpty()) {
+            newPhone = currentPatient.getPhoneNumber();
+        }
 
+        try {
+            Connection conn = DatabaseConnect.getConnection();
+            String sql = "UPDATE patients SET name = ?, email = ?, phone = ? WHERE patient_id = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, newName);
+            pstmt.setString(2, newEmail);
+            pstmt.setString(3, newPhone);
+            pstmt.setInt(4, currentPatient.getPatientId());
+            int result = pstmt.executeUpdate();
+
+            if (result > 0) {
+                currentPatient.setFullName(newName);
+                currentPatient.setEmail(newEmail);
+                currentPatient.setPhoneNumber(newPhone);
+                System.out.println("✅ Profile updated successfully!");
+            }
+        } catch (Exception e) {
+            System.out.println("❌ Update failed: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
-    public void bookAppointment(){
+    public void bookAppointment() {
+        
     }
 
-    public void viewPatientAppointments(){
+    public void viewPatientAppointments() {
     }
 
-    public void viewMedicalHistory(){
+    public void viewMedicalHistory() {
     }
 }
