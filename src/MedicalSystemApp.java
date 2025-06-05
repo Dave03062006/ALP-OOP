@@ -27,162 +27,6 @@ public class MedicalSystemApp {
 }
 
 class MainFrame extends JPanel {
-<<<<<<< HEAD
-        // Card layout names
-        private static final String ROLE_SELECTION_PANEL = "ROLE_SELECTION_PANEL";
-        private static final String PATIENT_REGISTER_PANEL = "PATIENT_REGISTER_PANEL";
-        private static final String DOCTOR_REGISTER_PANEL = "DOCTOR_REGISTER_PANEL";
-        private static final String PHARMACIST_REGISTER_PANEL = "PHARMACIST_REGISTER_PANEL";
-        private static final String LOGIN_PANEL = "LOGIN_PANEL";
-
-        // Dashboard panel names
-        private static final String PATIENT_DASHBOARD_PANEL = "PATIENT_DASHBOARD_PANEL";
-        private static final String DOCTOR_DASHBOARD_PANEL = "DOCTOR_DASHBOARD_PANEL";
-        private static final String PHARMACIST_DASHBOARD_PANEL = "PHARMACIST_DASHBOARD_PANEL";
-
-        // Patient-specific panel names
-        private static final String PATIENT_PROFILE_PANEL = "PATIENT_PROFILE_PANEL";
-        private static final String PATIENT_UPDATE_PROFILE_PANEL = "PATIENT_UPDATE_PROFILE_PANEL";
-        private static final String BOOK_APPOINTMENT_PANEL = "BOOK_APPOINTMENT_PANEL";
-        private static final String VIEW_APPOINTMENTS_PANEL = "VIEW_APPOINTMENTS_PANEL";
-        private static final String PATIENT_MEDICAL_HISTORY_PANEL = "PATIENT_MEDICAL_HISTORY_PANEL";
-
-        // Doctor-specific panel names
-        private static final String DOCTOR_PROFILE_PANEL = "DOCTOR_PROFILE_PANEL";
-        private static final String DOCTOR_UPDATE_PROFILE_PANEL = "DOCTOR_UPDATE_PROFILE_PANEL";
-        private static final String SET_AVAILABILITY_PANEL = "SET_AVAILABILITY_PANEL";
-        private static final String VIEW_PATIENTS_PANEL = "VIEW_PATIENTS_PANEL";
-
-        // Pharmacist-specific panel names
-        private static final String PHARMACIST_PROFILE_PANEL = "PHARMACIST_PROFILE_PANEL";
-        private static final String PHARMACIST_UPDATE_PROFILE_PANEL = "PHARMACIST_UPDATE_PROFILE_PANEL";
-        private static final String PRESCRIPTIONS_PANEL = "PRESCRIPTIONS_PANEL";
-
-        // Components
-        private JPanel cardPanel;
-        private CardLayout cardLayout;
-        private String currentRole = "";
-
-        public MainFrame() {
-                setLayout(new BorderLayout());
-                setBackground(new Color(236, 240, 241)); // Background color
-
-                // Create the title panel
-                JPanel titlePanel = PanelFactory.createTitlePanel();
-                add(titlePanel, BorderLayout.NORTH);
-
-                // Create card layout for panels
-                cardLayout = new CardLayout();
-                cardPanel = new JPanel(cardLayout);
-                cardPanel.setBackground(new Color(236, 240, 241));
-
-                // Create role selection panel
-                JPanel roleSelectionPanel = PanelFactory.createRoleSelectionPanel(
-                                cardLayout, cardPanel,
-                                PATIENT_REGISTER_PANEL,
-                                DOCTOR_REGISTER_PANEL,
-                                PHARMACIST_REGISTER_PANEL,
-                                LOGIN_PANEL);
-
-                // Create login panel
-                JPanel loginPanel = PanelFactory.createLoginPanel(
-                                cardLayout, cardPanel,
-                                ROLE_SELECTION_PANEL,
-                                this::handleLogin);
-
-                // Create registration panels
-                JPanel patientRegisterPanel = PanelFactory.createRegistrationPanel(
-                                "Patient", cardLayout, cardPanel,
-                                ROLE_SELECTION_PANEL, LOGIN_PANEL,
-                                this::handleRegistration);
-
-                JPanel doctorRegisterPanel = PanelFactory.createRegistrationPanel(
-                                "Doctor", cardLayout, cardPanel,
-                                ROLE_SELECTION_PANEL, LOGIN_PANEL,
-                                this::handleRegistration);
-
-                JPanel pharmacistRegisterPanel = PanelFactory.createRegistrationPanel(
-                                "Pharmacist", cardLayout, cardPanel,
-                                ROLE_SELECTION_PANEL, LOGIN_PANEL,
-                                this::handleRegistration);
-
-                // Add panels to card layout
-                cardPanel.add(roleSelectionPanel, ROLE_SELECTION_PANEL);
-                cardPanel.add(patientRegisterPanel, PATIENT_REGISTER_PANEL);
-                cardPanel.add(doctorRegisterPanel, DOCTOR_REGISTER_PANEL);
-                cardPanel.add(pharmacistRegisterPanel, PHARMACIST_REGISTER_PANEL);
-                cardPanel.add(loginPanel, LOGIN_PANEL);
-
-                add(cardPanel, BorderLayout.CENTER);
-
-                // Show role selection panel by default
-                cardLayout.show(cardPanel, ROLE_SELECTION_PANEL);
-        }
-
-        private void handleLogin(String role, String username, String password) {
-                // Simple validation
-                if (username.isEmpty() || password.isEmpty()) {
-                        JOptionPane.showMessageDialog(this,
-                                        "Please enter both username and password",
-                                        "Login Error",
-                                        JOptionPane.ERROR_MESSAGE);
-                        return;
-                }
-                // Authentication logic
-                currentRole = role;
-
-                // Create and add dashboard panels based on role
-                if (role.equals("Patient")) {
-                        // Create all patient-related panels if they don't exist
-                        if (!panelExists(PATIENT_DASHBOARD_PANEL)) {
-                                createPatientPanels(username);
-                        }
-                        cardLayout.show(cardPanel, PATIENT_DASHBOARD_PANEL);
-
-                } else if (role.equals("Doctor")) {
-                        // Create all doctor-related panels if they don't exist
-                        if (!panelExists(DOCTOR_DASHBOARD_PANEL)) {
-                                createDoctorPanels(username);
-                        }
-                        cardLayout.show(cardPanel, DOCTOR_DASHBOARD_PANEL);
-
-                } else if (role.equals("Pharmacist")) {
-                        // Create all pharmacist-related panels if they don't exist
-                        if (!panelExists(PHARMACIST_DASHBOARD_PANEL)) {
-                                createPharmacistPanels(username);
-                        }
-                        cardLayout.show(cardPanel, PHARMACIST_DASHBOARD_PANEL);
-                }
-        }
-
-        private boolean handleRegistration(String role, String fullName, String email,
-                        String specificId, String username,
-                        String password, String confirmPassword) {
-                // Initial check
-                if (fullName.isEmpty() || email.isEmpty() || specificId.isEmpty() ||
-                                username.isEmpty() || password.isEmpty()) {
-                        JOptionPane.showMessageDialog(this,
-                                        "Please fill in all required fields",
-                                        "Registration Error",
-                                        JOptionPane.ERROR_MESSAGE);
-                        return false;
-                }
-
-                // Password confirmation
-                if (!password.equals(confirmPassword)) {
-                        JOptionPane.showMessageDialog(this,
-                                        "Passwords do not match",
-                                        "Registration Error",
-                                        JOptionPane.ERROR_MESSAGE);
-                        return false;
-                }
-
-                // Registration logic here
-
-                String fieldName = role.equals("Patient") ? "Medical Record"
-                                : (role.equals("Doctor") ? "License" : "Pharmacy ID");
-
-=======
 
         @FunctionalInterface
         public interface AppointmentBookingHandler {
@@ -343,7 +187,6 @@ class MainFrame extends JPanel {
                 String fieldName = role.equals("Patient") ? "Medical Record"
                                 : (role.equals("Doctor") ? "License" : "Pharmacy ID");
 
->>>>>>> Dave
                 JOptionPane.showMessageDialog(this,
                                 "Registration as " + role + " for: " + fullName + "\n" +
                                                 fieldName + ": " + specificId,
@@ -393,12 +236,6 @@ class MainFrame extends JPanel {
                 // Create appointment booking panel
                 JPanel bookAppointment = DashboardPanels.createBookAppointmentPanel(
                                 cardLayout, cardPanel, PATIENT_DASHBOARD_PANEL,
-<<<<<<< HEAD
-                                (day, time, specialistType, reason) -> handleAppointmentBooking(day, time,
-                                                specialistType, reason));
-                bookAppointment.setName(BOOK_APPOINTMENT_PANEL);
-
-=======
                                 new DashboardPanels.AppointmentBookingHandler() {
                                         @Override
                                         public boolean checkAvailability(String day, String time,
@@ -415,7 +252,6 @@ class MainFrame extends JPanel {
                                         }
                                 });
                 bookAppointment.setName(BOOK_APPOINTMENT_PANEL);
->>>>>>> Dave
                 // Create appointments viewing panel
                 JPanel viewAppointments = DashboardPanels.createViewAppointmentsPanel(
                                 cardLayout, cardPanel, PATIENT_DASHBOARD_PANEL);
@@ -423,12 +259,8 @@ class MainFrame extends JPanel {
 
                 // Create a simple medical history panel (placeholder)
                 JPanel medicalHistory = createSimplePlaceholderPanel(
-<<<<<<< HEAD
-                                "Medical History", "Patient", PATIENT_PROFILE_PANEL);
-=======
                                 "Medical History", "Patient",
                                 PATIENT_PROFILE_PANEL);
->>>>>>> Dave
                 medicalHistory.setName(PATIENT_MEDICAL_HISTORY_PANEL);
 
                 // Add all panels to the card layout
@@ -525,10 +357,6 @@ class MainFrame extends JPanel {
                 cardPanel.add(prescriptions, PRESCRIPTIONS_PANEL);
         }
 
-<<<<<<< HEAD
-        // DUMMY
-=======
->>>>>>> Dave
         // Create a simple placeholder panel for features not fully implemented
         private JPanel createSimplePlaceholderPanel(String title, String role, String backPanelName) {
                 JPanel panel = new JPanel();
@@ -624,10 +452,6 @@ class MainFrame extends JPanel {
                 return true;
         }
 
-<<<<<<< HEAD
-        // what is this, ho to do this, i dont understand 
-=======
->>>>>>> Dave
         // Handler for doctor availability updates
         private boolean handleAvailabilityUpdate(Map<String, String> availability) {
                 StringBuilder availabilityText = new StringBuilder("Availability updated:\n");
