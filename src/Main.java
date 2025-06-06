@@ -9,27 +9,41 @@ public class Main {
     Pharmacist currentPharmacist = null;
 
     public static void main(String[] args) {
-
+       
+        Main mainApp = new Main();
+        mainApp.menu();
     }
 
+    // public String getEmoji(String emoji, String fallback) {
+    //     String term = System.getenv("TERM");
+    //     String termProgram = System.getenv("TERM_PROGRAM");
+
+    //     boolean supportsEmoji = (term != null && (term.contains("xterm") || term.contains("256color")))
+    //             || (termProgram != null && (termProgram.contains("iTerm") || termProgram.contains("vscode")));
+    //     return supportsEmoji ? emoji : fallback;
+    // }
+
     public void menu() {
+        logo();
         do {
-            System.out.println("Welcome to the application -- your comprehensive healthcare management platform!");
-            System.out.println("This system connects patients, doctors, and pharmacists in one integrated environment. As a  patient, you can easily register, book appointments with specialized doctors, track your 
-medical history, and manage your healthcare journey. Doctors can efficiently manage their 
-schedules, view patient appointments, provide diagnoses, and prescribe medications. 
-Pharmacists can process prescriptions, manage medicine inventory, and track prescription 
-status from pending to completion. Whether you're seeking medical care, providing treatment, 
-or dispensing medications, our system streamlines healthcare operations with secure login, 
-intuitive menus, and real-time database integration. Please select your role below to begin 
-your healthcare experience.");
-            System.out.println("Please select your role to register");
-            System.out.println("(1) Register as Patient");
-            System.out.println("(2) Register as Doctor");
-            System.out.println("(3) Register as Pharmacist");
-            System.out.println("(4) Already registered? Login");
-            System.out.println("(5) Exit");
-            System.out.print("Enter your choice: ");
+            System.out.println(
+                    "Welcome to the application -- your comprehensive healthcare management platform!\nThis system connects patients, doctors, and pharmacists in one integrated environment. As a  patient, you can easily register, book appointments with specialized doctors, track your \r\n"
+                            + //
+                            "medical history, and manage your healthcare journey. Doctors can efficiently manage their \r\n"
+                            + //
+                            "schedules, view patient appointments, provide diagnoses, and prescribe medications. \r\n" + //
+                            "Pharmacists can process prescriptions, manage medicine inventory, and track prescription \r\n"
+                            + //
+                            "status from pending to completion. Whether you're seeking medical care, providing treatment, \r\n"
+                            + //
+                            "or dispensing medications, our system streamlines healthcare operations with secure login, \r\n"
+                            + //
+                            "intuitive menus, and real-time database integration. Please select your role below to begin \r\n"
+                            + //
+                            "your healthcare experience.");
+            System.out.println("----Please select your role to register----");
+            System.out.println(
+                    "1. Register as Patient 🤕\n2. Register as Doctor 🩺\n3. Register as Pharmacist 💊\n4. Already registered? Login\n5. Exit\nEnter your choice: ");
             int choice = s.nextInt();
             switch (choice) {
                 case 1:
@@ -54,16 +68,16 @@ your healthcare experience.");
     // registrations
     public void registerPatient() {
         System.out.println("Registering as Patient...");
-        System.out.println("\n------ Patient Registration ---");
-        System.out.print("Enter your full name: ");
+        System.out.println("\n------ 🤕 Patient Registration 🤕 ---");
+        System.out.print("Enter your full name 🪪: ");
         String fullName = s.next() + s.nextLine();
-        System.out.print("Enter your email: ");
+        System.out.print("Enter your email 📧: ");
         String email = s.next() + s.nextLine();
-        System.out.print("Enter your phone number: ");
+        System.out.print("Enter your phone number 📞: ");
         String phoneNumber = s.next() + s.nextLine();
-        System.out.println("Create a password: ");
+        System.out.println("Create a password 🔒: ");
         String password = s.next() + s.nextLine();
-        System.out.println("Confirm your password: ");
+        System.out.println("Confirm your password 🔐: ");
         String confirmPassword = s.next() + s.nextLine();
 
         if (!password.equals(confirmPassword)) {
@@ -77,22 +91,57 @@ your healthcare experience.");
 
     public void registerDoctor() {
         System.out.println("Registering as Doctor...");
+        System.out.println("\n------ 🧑‍⚕️ Doctor Registration 🧑‍⚕️ ---");
+        System.out.print("Enter your full name 🪪: ");
+        String fullName = s.next() + s.nextLine();
+        System.out.print("Enter your email 📧: ");
+        String email = s.next() + s.nextLine();
+        System.out.print("Enter your phone number 📞: ");
+        String phoneNumber = s.next() + s.nextLine();
+        System.out.println("Create a password 🔒: ");
+        String password = s.next() + s.nextLine();
+        System.out.println("Confirm your password 🔐: ");
+        String confirmPassword = s.next() + s.nextLine();
 
+        if (!password.equals(confirmPassword)) {
+            System.out.println("❌ Passwords do not match. Registration failed.");
+            return;
+        }
+
+        Doctor newDoctor = new Doctor(email, password, fullName, phoneNumber, false, confirmPassword);
+        newDoctor.register(email, confirmPassword, fullName, phoneNumber);
     }
 
     public void registerPharmacist() {
         System.out.println("Registering as Pharmacist...");
-        // Logic for pharmacist registration
+        System.out.println("\n------ 💊 Pharmacist Registration 💊 ---");
+        System.out.print("Enter your full name 🪪: ");
+        String fullName = s.next() + s.nextLine();
+        System.out.print("Enter your email 📧: ");
+        String email = s.next() + s.nextLine();
+        System.out.print("Enter your phone number 📞: ");
+        String phoneNumber = s.next() + s.nextLine();
+        System.out.println("Create a password 🔒: ");
+        String password = s.next() + s.nextLine();
+        System.out.println("Confirm your password 🔐: ");
+        String confirmPassword = s.next() + s.nextLine();
+
+        if (!password.equals(confirmPassword)) {
+            System.out.println("❌ Passwords do not match. Registration failed.");
+            return;
+        }
+        Pharmacist newPharmacist = new Pharmacist(email, password, fullName, phoneNumber, false);
+        newPharmacist.register(email, confirmPassword, fullName, phoneNumber);
     }
 
     // logins
     public void loginGeneral() {
         System.out.println("Logging in...");
         System.out.println("What is your role?");
-        System.out.println("(1) Patient");
-        System.out.println("(2) Doctor");
-        System.out.println("(3) Pharmacist");
-        System.out.println("(4) Back to Registration Menu");
+        System.out.println("1. Patient \\uD83E\\uDD15");
+        System.out.println("2. Doctor 🩺");
+        System.out.println("3. Pharmacist 💊");
+        System.out.println("4. Back to Registration Menu ⬅️");
         System.out.print("Enter your choice: ");
         int choice = s.nextInt();
         switch (choice) {
@@ -106,7 +155,7 @@ your healthcare experience.");
                 loginPharmacist();
                 break;
             default:
-                System.out.println("Invalid choice. Please try again.");
+                System.out.println("❌ Invalid choice. Please try again.");
                 loginGeneral();
                 break;
         }
@@ -171,7 +220,7 @@ your healthcare experience.");
             System.out.println("\n" + "=".repeat(50));
             System.out.println("    PATIENT DASHBOARD - " + currentPatient.getFullName());
             System.out.println("=".repeat(50));
-            System.out.println("(1) View My Profile");
+            System.out.println("1. View My Profile");
             System.out.println("2. Update My Profile");
             System.out.println("3. Book an Appointment");
             System.out.println("4. View My Appointments");
@@ -231,14 +280,14 @@ your healthcare experience.");
         if (newName.trim().isEmpty()) {
             newName = currentPatient.getFullName();
         }
-        
+
         System.out.println("Current Email: " + currentPatient.getEmail());
         System.out.print("Enter new email (or press Enter to keep current): ");
         String newEmail = s.nextLine();
         if (newEmail.trim().isEmpty()) {
             newEmail = currentPatient.getEmail();
         }
-        
+
         System.out.println("Current Phone: " + currentPatient.getPhoneNumber());
         System.out.print("Enter new phone (or press Enter to keep current): ");
         String newPhone = s.nextLine();
@@ -269,12 +318,88 @@ your healthcare experience.");
     }
 
     public void bookAppointment() {
-        
+        System.out.println("\n--- Book Appointment ---");
+        System.out.println("Please select a specialist:");
+        System.out.println("1. General Practitioner");
+        System.out.println("2. Cardiologist");
+        System.out.println("3. Dermatologist");
+        System.out.println("4. Neurologist");
+        System.out.println("5. Back to Dashboard");
+        int doctor_choice = s.nextInt();
+        System.out.println("\nEnter the date for your appointment (YYYY-MM-DD): ");
+        String appointmentDate = s.next() + s.nextLine();
+        System.out.println("Enter the time for your appointment, each appointment has a 15 minute interval (12.15): ");
+        String appointmentTime = s.next() + s.nextLine();
+        System.out.println("Enter your symptoms or reason for the appointment: ");
+        String symptoms = s.next() + s.nextLine();
+        try {
+            Connection conn = DatabaseConnect.getConnection();
+            String sql = "INSERT INTO appointments (patient_id, doctor_specialist, appointment_date, appointment_time, symptoms) VALUES (?, ?, ?, ?, ?)";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, currentPatient.getPatientId());
+            pstmt.setString(2, getSpecialistByChoice(doctor_choice));
+            pstmt.setString(3, appointmentDate);
+            pstmt.setString(4, appointmentTime);
+            pstmt.setString(5, symptoms);
+
+            int result = pstmt.executeUpdate();
+            if (result > 0) {
+                System.out.println("✅ Appointment booked successfully!");
+            } else {
+                System.out.println("❌ Failed to book appointment.");
+            }
+        } catch (Exception e) {
+            System.out.println("❌ Booking failed: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private String getSpecialistByChoice(int choice) {
+        switch (choice) {
+            case 1:
+                return "General Practitioner";
+            case 2:
+                return "Cardiologist";
+            case 3:
+                return "Dermatologist";
+            case 4:
+                return "Neurologist";
+            default:
+                return "Unknown";
+        }
     }
 
     public void viewPatientAppointments() {
     }
 
     public void viewMedicalHistory() {
+    }
+
+    public void logo() {
+        System.out.println("                     *******************");
+        System.out.println("               /******,,.,.....,.....,,*******");
+        System.out.println("           /****,...........................,*****");
+        System.out.println("        #****...................................,****");
+        System.out.println("      ****..............,((((.(.*(((*..............****");
+        System.out.println("    ,***......*....//*(((/((**/,//(*(((**/...........,**/");
+        System.out.println("   ***...........,........*(..(..,(....................***");
+        System.out.println(" ***.........../////......./.,*(/..../(.////(((*........***");
+        System.out.println("***..............////......((((,...((..///....*(.........***");
+        System.out.println("***,.............././//...../(/,(..(((,**//.....*.........,**&");
+        System.out.println(",**................/..///,....(*(...((((.,//................***");
+        System.out.println("***................/...////....(.....*((((//,...............,**");
+        System.out.println("***................/....,///......../....(((((,..............**");
+        System.out.println("***................/......///....../......///((((/..........,**");
+        System.out.println("***................/.......///..../.......///..((((.........***");
+        System.out.println("&**,.............../........///.././......///...(((.......,.**,");
+        System.out.println(" ,**.............../.........////...(,....///...((*........***");
+        System.out.println("  ***.............///.........//....(((*..///,.(/.........***");
+        System.out.println("   ,**,..................................................***");
+        System.out.println("     ***..............................................,***");
+        System.out.println("      ****...........................................****");
+        System.out.println("        %***,.,.................................,.,***,");
+        System.out.println("           .****...............................,***/");
+        System.out.println("              &******...................,.,*****/");
+        System.out.println("                    ************************");
     }
 }
