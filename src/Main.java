@@ -1,4 +1,7 @@
 import java.util.Scanner;
+
+import javax.print.Doc;
+
 import java.sql.*;
 
 public class Main {
@@ -146,7 +149,9 @@ public class Main {
         int choice = s.nextInt();
         switch (choice) {
             case 1:
-                loginPatient();
+                if(loginPatient()){
+                    patientDashboard();
+                }
                 break;
             case 2:
                 loginDoctor();
@@ -204,9 +209,47 @@ public class Main {
 
     }
 
-    public void loginDoctor() {
+    public boolean loginDoctor() {
         System.out.println("Logging in as Doctor...");
-        // Logic for doctor login
+         System.out.println("\n--- DOCTOR LOGIN ---");
+        System.out.print("Enter email: ");
+        String email = s.nextLine();
+        System.out.print("Enter password: ");
+        String password = s.nextLine();
+
+        Doctor temDoctor = new Doctor(email, password, "", "", false, "");
+        try {
+            Connection conn = DatabaseConnect.getConnection();
+            String sql = "SELECT * FROM patient WHERE email = ? AND password = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, email);
+            pstmt.setString(2, password);
+
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                currentDoctor = new Doctor(
+                        rs.getInt("doctor_id"),
+                        rs.getString("email"),
+                        rs.getString("password"),
+                        rs.getString("full_name"),
+                        rs.getString("phone_number"),
+                        rs.getBoolean("on_duty"),
+                        rs.getString("specialist")
+                );
+
+                System.out.println("✅ Login successful! Welcome, " + currentDoctor.getFullName());
+                return true;
+            } else {
+                System.out.println("❌ Invalid credentials. Please try again.");
+                return false;
+            }
+
+        } catch (Exception e) {
+            System.out.println("❌ Login error: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public void loginPharmacist() {
@@ -232,19 +275,19 @@ public class Main {
 
             switch (choice) {
                 case 1:
-                    viewPatientProfile();
+                    currentPatient.displayInfo();
                     break;
                 case 2:
-                    updatePatientProfile();
+                    currentPatient.updatePatientProfile();
                     break;
                 case 3:
-                    bookAppointment();
+                    currentPatient.bookAppointment();
                     break;
                 case 4:
-                    viewPatientAppointments();
+                    currentPatient.viewPatientAppointments();
                     break;
                 case 5:
-                    viewMedicalHistory();
+                    currentPatient.viewMedicalHistory();
                     break;
                 case 6:
                     currentPatient = null;
@@ -256,124 +299,43 @@ public class Main {
         }
     }
 
-    public void viewPatientProfile() {
-        System.out.println("\n--- MY PROFILE ---");
-        System.out.println("Patient ID: " + currentPatient.getPatientId());
-        System.out.println("Name: " + currentPatient.getFullName());
-        System.out.println("Email: " + currentPatient.getEmail());
-        System.out.println("Phone: " + currentPatient.getPhoneNumber());
+    public void doctorDashboard() {
+        while (true) {
+            System.out.println("\n" + "=".repeat(50));
+            System.out.println("    DOCTOR DASHBOARD - " + currentDoctor.getFullName());
+            System.out.println("=".repeat(50));
+            System.out.println("1. View My Profile");
+            System.out.println("2. Update My Profile");
+            System.out.println("3. View Appointments");
+            System.out.println("4. Prescribe Medicine");
+            System.out.println("5. Logout");
+            System.out.println("=".repeat(50));
 
-        System.out.println("(0) Back to Dashboard");
-        int choice = s.nextInt();
-        if (choice == 0) {
-            patientDashboard();
-        } else {
-            System.out.println("invalidChoice");
-        }
-    }
+            int choice = s.nextInt();
 
-    public void updatePatientProfile() {
-        System.out.println("\n--- UPDATE PROFILE ---");
-        System.out.println("Current Name: " + currentPatient.getFullName());
-        System.out.print("Enter new name (or press Enter to keep current): ");
-        String newName = s.nextLine();
-        if (newName.trim().isEmpty()) {
-            newName = currentPatient.getFullName();
-        }
-
-        System.out.println("Current Email: " + currentPatient.getEmail());
-        System.out.print("Enter new email (or press Enter to keep current): ");
-        String newEmail = s.nextLine();
-        if (newEmail.trim().isEmpty()) {
-            newEmail = currentPatient.getEmail();
-        }
-
-        System.out.println("Current Phone: " + currentPatient.getPhoneNumber());
-        System.out.print("Enter new phone (or press Enter to keep current): ");
-        String newPhone = s.nextLine();
-        if (newPhone.trim().isEmpty()) {
-            newPhone = currentPatient.getPhoneNumber();
-        }
-
-        try {
-            Connection conn = DatabaseConnect.getConnection();
-            String sql = "UPDATE patients SET name = ?, email = ?, phone = ? WHERE patient_id = ?";
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, newName);
-            pstmt.setString(2, newEmail);
-            pstmt.setString(3, newPhone);
-            pstmt.setInt(4, currentPatient.getPatientId());
-            int result = pstmt.executeUpdate();
-
-            if (result > 0) {
-                currentPatient.setFullName(newName);
-                currentPatient.setEmail(newEmail);
-                currentPatient.setPhoneNumber(newPhone);
-                System.out.println("✅ Profile updated successfully!");
+            switch (choice) {
+                case 1:
+                    currentDoctor.displayInfo();
+                    break;
+                case 2:
+                    currentDoctor.updateDoctorProfile();
+                    break;
+                case 3:
+                    currentDoctor.viewAppointments();
+                    break;
+                case 4:
+                    currentDoctor.prescribeMedicine();
+                    break;
+                case 5:
+                    currentDoctor = null;
+                    System.out.println("✅ Logged out successfully.");
+                    return;
+                default:
+                    System.out.println("❌ Invalid option. Please try again.");
             }
-        } catch (Exception e) {
-            System.out.println("❌ Update failed: " + e.getMessage());
-            e.printStackTrace();
         }
     }
-
-    public void bookAppointment() {
-        System.out.println("\n--- Book Appointment ---");
-        System.out.println("Please select a specialist:");
-        System.out.println("1. General Practitioner");
-        System.out.println("2. Cardiologist");
-        System.out.println("3. Dermatologist");
-        System.out.println("4. Neurologist");
-        System.out.println("5. Back to Dashboard");
-        int doctor_choice = s.nextInt();
-        System.out.println("\nEnter the date for your appointment (YYYY-MM-DD): ");
-        String appointmentDate = s.next() + s.nextLine();
-        System.out.println("Enter the time for your appointment, each appointment has a 15 minute interval (12.15): ");
-        String appointmentTime = s.next() + s.nextLine();
-        System.out.println("Enter your symptoms or reason for the appointment: ");
-        String symptoms = s.next() + s.nextLine();
-        try {
-            Connection conn = DatabaseConnect.getConnection();
-            String sql = "INSERT INTO appointments (patient_id, doctor_specialist, appointment_date, appointment_time, symptoms) VALUES (?, ?, ?, ?, ?)";
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setInt(1, currentPatient.getPatientId());
-            pstmt.setString(2, getSpecialistByChoice(doctor_choice));
-            pstmt.setString(3, appointmentDate);
-            pstmt.setString(4, appointmentTime);
-            pstmt.setString(5, symptoms);
-
-            int result = pstmt.executeUpdate();
-            if (result > 0) {
-                System.out.println("✅ Appointment booked successfully!");
-            } else {
-                System.out.println("❌ Failed to book appointment.");
-            }
-        } catch (Exception e) {
-            System.out.println("❌ Booking failed: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    private String getSpecialistByChoice(int choice) {
-        switch (choice) {
-            case 1:
-                return "General Practitioner";
-            case 2:
-                return "Cardiologist";
-            case 3:
-                return "Dermatologist";
-            case 4:
-                return "Neurologist";
-            default:
-                return "Unknown";
-        }
-    }
-
-    public void viewPatientAppointments() {
-    }
-
-    public void viewMedicalHistory() {
-    }
+    
 
     public void logo() {
         System.out.println("                     *******************");

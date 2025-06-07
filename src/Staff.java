@@ -11,7 +11,7 @@ public class Staff extends User {
 
     @Override
     public void displayInfo() {
-        System.out.println("Staff Info:");
+        System.out.println("=== Staff Info: ===");
         System.out.println("Email: " + getEmail());
         System.out.println("Full Name: " + getFullName());
         System.out.println("Phone Number: " + getPhoneNumber());
