@@ -1,6 +1,9 @@
+package model;
 import java.sql.*;
 
 import java.util.ArrayList;
+
+import logic.DatabaseConnect;
 
 public class Prescription {
     protected int prescriptionId;

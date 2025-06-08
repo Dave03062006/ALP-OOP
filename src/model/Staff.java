@@ -1,3 +1,4 @@
+package model;
 public class Staff extends User {
     protected boolean onDuty;
     

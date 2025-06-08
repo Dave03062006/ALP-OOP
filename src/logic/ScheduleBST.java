@@ -1,3 +1,4 @@
+package logic;
 import java.time.LocalTime;
 
 public class ScheduleBST {

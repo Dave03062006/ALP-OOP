@@ -1,4 +1,7 @@
+package logic;
 import java.util.ArrayList;
+
+import model.Medicine;
 
 public class Queue {
     protected ArrayList<Medicine> medicines;
