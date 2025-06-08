@@ -41,7 +41,7 @@ public class Patient extends User {
     }
 
     @Override
-    public void login(String email, String password) {
+    public boolean login(String email, String password) {
         try {
             Connection conn = DatabaseConnect.getConnection();
             String sql = "SELECT * FROM patients WHERE email = ? AND password = ?";
@@ -55,17 +55,21 @@ public class Patient extends User {
                 this.password = rs.getString("password");
                 this.fullName = rs.getString("full_name");
                 this.phoneNumber = rs.getString("phone_number");
-                System.out.println("Login successful for patient: " + fullName);
+                System.out.println("✅ Login successful for patient: " + fullName);
+                return true;
             } else {
-                System.out.println("Login failed. Invalid email or password.");
+                System.out.println("❌ Login failed. Invalid email or password.");
+                return false;
             }
         } catch (SQLException e) {
+            System.out.println("❌ Login error: " + e.getMessage());
             e.printStackTrace();
+            return false;
         }
     }
 
     @Override
-    public void register(String email, String password, String fullName, String phoneNumber) {
+    public boolean register(String email, String password, String fullName, String phoneNumber) {
         try {
             Connection conn = DatabaseConnect.getConnection();
             String sql = "INSERT INTO patients (email, password, full_name, phone_number) VALUES (?, ?, ?, ?)";
@@ -85,10 +89,16 @@ public class Patient extends User {
                 this.password = password;
                 this.fullName = fullName;
                 this.phoneNumber = phoneNumber;
-                System.out.println("Patient registered successfully with ID: " + this.patientId);
+                System.out.println("✅ Patient registered successfully with ID: " + this.patientId);
+                return true;
+            } else {
+                System.out.println("❌ Registration failed. Please try again.");
+                return false;
             }
         } catch (SQLException e) {
+            System.out.println("❌ Registration error: " + e.getMessage());
             e.printStackTrace();
+            return false;
         }
     }
 
@@ -139,366 +149,199 @@ public class Patient extends User {
         }
     }
 
-    // Updated Patient.java - Replace the existing bookAppointment method
-
-public void bookAppointment() {
-    System.out.println("\n--- Book Appointment ---");
-    System.out.println("Please select a specialist:");
-    System.out.println("1. General Practitioner");
-    System.out.println("2. Cardiologist");
-    System.out.println("3. Dermatologist");
-    System.out.println("4. Neurologist");
-    System.out.println("5. Back to Dashboard");
-    
-    int doctorChoice = 0;
-    try {
-        doctorChoice = s.nextInt();
-        s.nextLine(); // Consume newline
-    } catch (Exception e) {
-        System.out.println("❌ Invalid input. Please enter a number.");
-        s.nextLine();
-        return;
-    }
-
-    if (doctorChoice == 5) {
-        return; // Return to dashboard
-    }
-
-    String specialist = getSpecialistByChoice(doctorChoice);
-    if (specialist.equals("Unknown")) {
-        System.out.println("❌ Invalid specialist choice.");
-        return;
-    }
-
-    // Show only ON-DUTY doctors for this specialist
-    ArrayList<Doctor> availableDoctors = Doctor.getDoctorsBySpecialist(specialist);
-    if (availableDoctors.isEmpty()) {
-        System.out.println("❌ No " + specialist + " doctors are currently available (on-duty)");
-        System.out.println("💡 Please try again later or select a different specialist.");
-        return;
-    }
-
-    System.out.println("\n✅ Available " + specialist + " doctors (ON DUTY):");
-    for (int i = 0; i < availableDoctors.size(); i++) {
-        Doctor doc = availableDoctors.get(i);
-        System.out.println((i + 1) + ". Dr. " + doc.getFullName() + " (ID: " + doc.getDoctorId() + ") 🟢");
-    }
-
-    System.out.print("Select doctor (1-" + availableDoctors.size() + "): ");
-    int doctorIndex = 0;
-    try {
-        doctorIndex = s.nextInt() - 1;
-        s.nextLine();
-    } catch (Exception e) {
-        System.out.println("❌ Invalid input.");
-        s.nextLine();
-        return;
-    }
-
-    if (doctorIndex < 0 || doctorIndex >= availableDoctors.size()) {
-        System.out.println("❌ Invalid doctor selection.");
-        return;
-    }
-
-    Doctor selectedDoctor = availableDoctors.get(doctorIndex);
-
-    // Verify doctor is still on duty (real-time check)
-    if (!isDoctorCurrentlyOnDuty(selectedDoctor.getDoctorId())) {
-        System.out.println("❌ Sorry, Dr. " + selectedDoctor.getFullName() + " is no longer available.");
-        System.out.println("💡 Please select another doctor or try again later.");
-        return;
-    }
-
-    // Get appointment date
-    System.out.print("\nEnter the date for your appointment (YYYY-MM-DD): ");
-    String appointmentDate = s.nextLine();
-    
-    // Validate date format
-    try {
-        LocalDate.parse(appointmentDate);
-    } catch (Exception e) {
-        System.out.println("❌ Invalid date format. Please use YYYY-MM-DD format.");
-        return;
-    }
-
-    // Get available time slots for this doctor and date
-    ArrayList<String> availableSlots = selectedDoctor.getAvailableTimeSlotsForDate(appointmentDate);
-    
-    if (availableSlots.isEmpty()) {
-        System.out.println("❌ No available time slots for Dr. " + selectedDoctor.getFullName() + " on " + appointmentDate);
-        System.out.println("💡 Possible reasons:");
-        System.out.println("   • Doctor hasn't set availability for this date");
-        System.out.println("   • All time slots are already booked");
-        System.out.println("   • Please try a different date");
-        return;
-    }
-
-    // Display available time slots
-    System.out.println("\n✅ Available time slots for Dr. " + selectedDoctor.getFullName() + " on " + appointmentDate + ":");
-    System.out.println("=".repeat(60));
-    
-    displayAvailableTimeSlotsForBooking(availableSlots);
-    
-    // Let patient select a time slot
-    System.out.print("\nSelect time slot number (1-" + availableSlots.size() + "): ");
-    int timeChoice = 0;
-    try {
-        timeChoice = s.nextInt() - 1;
-        s.nextLine(); // Consume newline
-    } catch (Exception e) {
-        System.out.println("❌ Invalid input.");
-        s.nextLine();
-        return;
-    }
-    
-    if (timeChoice < 0 || timeChoice >= availableSlots.size()) {
-        System.out.println("❌ Invalid time slot selection.");
-        return;
-    }
-    
-    String selectedTime = availableSlots.get(timeChoice);
-    
-    // Get symptoms/reason
-    System.out.print("Enter your symptoms or reason for the appointment: ");
-    String symptoms = s.nextLine();
-
-    // Final verification before booking
-    if (!isDoctorCurrentlyOnDuty(selectedDoctor.getDoctorId())) {
-        System.out.println("❌ Sorry, Dr. " + selectedDoctor.getFullName() + " just went off duty.");
-        System.out.println("💡 Please start the booking process again.");
-        return;
-    }
-
-    // Confirm booking details
-    System.out.println("\n=== APPOINTMENT CONFIRMATION ===");
-    System.out.println("Doctor: Dr. " + selectedDoctor.getFullName() + " (" + selectedDoctor.getSpecialist() + ") 🟢");
-    System.out.println("Date: " + appointmentDate);
-    System.out.println("Time: " + selectedTime);
-    System.out.println("Reason: " + symptoms);
-    System.out.print("\nConfirm booking? (Y/N): ");
-    
-    String confirm = s.nextLine().toUpperCase();
-    if (!confirm.equals("Y")) {
-        System.out.println("❌ Booking cancelled.");
-        return;
-    }
-
-    // Book the appointment
-    try {
-        Connection conn = DatabaseConnect.getConnection();
-        String sql = "INSERT INTO appointments (patient_id, doctor_id, appointment_date, appointment_time, diagnose_result, appointment_date_time) VALUES (?, ?, ?, ?, ?, ?)";
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setInt(1, this.getPatientId());
-        pstmt.setInt(2, selectedDoctor.getDoctorId());
-        pstmt.setString(3, appointmentDate);
-        pstmt.setString(4, selectedTime);
-        pstmt.setString(5, symptoms);
-        pstmt.setString(6, appointmentDate + " " + selectedTime + ":00");
-
-        int result = pstmt.executeUpdate();
-        if (result > 0) {
-            System.out.println("\n🎉 Appointment booked successfully!");
-            System.out.println("📋 Appointment Details:");
-            System.out.println("   Doctor: Dr. " + selectedDoctor.getFullName() + " 🟢");
-            System.out.println("   Specialist: " + selectedDoctor.getSpecialist());
-            System.out.println("   Date: " + appointmentDate);
-            System.out.println("   Time: " + selectedTime);
-            System.out.println("   Duration: 15 minutes");
-            System.out.println("\n💡 Important Notes:");
-            System.out.println("   • Please arrive 10 minutes early");
-            System.out.println("   • Bring a valid ID");
-            System.out.println("   • Your doctor is currently on duty ✅");
-        } else {
-            System.out.println("❌ Failed to book appointment.");
-        }
-    } catch (Exception e) {
-        System.out.println("❌ Booking failed: " + e.getMessage());
-        e.printStackTrace();
-    }
-}
-
-private boolean isDoctorCurrentlyOnDuty(int doctorId) {
-    try {
-        Connection conn = DatabaseConnect.getConnection();
-        String sql = "SELECT onDuty FROM doctors WHERE doctor_id = ?";
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setInt(1, doctorId);
-        ResultSet rs = pstmt.executeQuery();
+    // Rest of the Patient methods remain the same...
+    public void bookAppointment() {
+        System.out.println("\n--- Book Appointment ---");
+        System.out.println("Please select a specialist:");
+        System.out.println("1. General Practitioner");
+        System.out.println("2. Cardiologist");
+        System.out.println("3. Dermatologist");
+        System.out.println("4. Neurologist");
+        System.out.println("5. Back to Dashboard");
         
-        if (rs.next()) {
-            return rs.getBoolean("onDuty");
-        }
-    } catch (SQLException e) {
-        System.out.println("❌ Error checking doctor status: " + e.getMessage());
-    }
-    return false;
-}
-
-private String getValidAppointmentDate() {
-    while (true) {
-        System.out.print("Enter the date for your appointment (YYYY-MM-DD): ");
-        String dateStr = s.nextLine().trim();
-        
-        if (dateStr.isEmpty()) {
-            System.out.println("❌ Date cannot be empty.");
-            continue;
-        }
-        
+        int doctorChoice = 0;
         try {
-            LocalDate date = LocalDate.parse(dateStr);
-            
-            // Check if date is in the past
-            if (date.isBefore(LocalDate.now())) {
-                System.out.println("❌ Cannot book appointments for past dates.");
-                continue;
-            }
-            
-            // Check if date is too far in future
-            if (date.isAfter(LocalDate.now().plusMonths(3))) {
-                System.out.println("❌ Cannot book appointments more than 3 months in advance.");
-                continue;
-            }
-            
-            return dateStr;
+            doctorChoice = s.nextInt();
+            s.nextLine(); // Consume newline
+        } catch (Exception e) {
+            System.out.println("❌ Invalid input. Please enter a number.");
+            s.nextLine();
+            return;
+        }
+
+        if (doctorChoice == 5) {
+            return; // Return to dashboard
+        }
+
+        String specialist = getSpecialistByChoice(doctorChoice);
+        if (specialist.equals("Unknown")) {
+            System.out.println("❌ Invalid specialist choice.");
+            return;
+        }
+
+        // Show only ON-DUTY doctors for this specialist
+        ArrayList<Doctor> availableDoctors = Doctor.getDoctorsBySpecialist(specialist);
+        if (availableDoctors.isEmpty()) {
+            System.out.println("❌ No " + specialist + " doctors are currently available (on-duty)");
+            System.out.println("💡 Please try again later or select a different specialist.");
+            return;
+        }
+
+        System.out.println("\n✅ Available " + specialist + " doctors (ON DUTY):");
+        for (int i = 0; i < availableDoctors.size(); i++) {
+            Doctor doc = availableDoctors.get(i);
+            System.out.println((i + 1) + ". Dr. " + doc.getFullName() + " (ID: " + doc.getDoctorId() + ") 🟢");
+        }
+
+        System.out.print("Select doctor (1-" + availableDoctors.size() + "): ");
+        int doctorIndex = 0;
+        try {
+            doctorIndex = s.nextInt() - 1;
+            s.nextLine();
+        } catch (Exception e) {
+            System.out.println("❌ Invalid input.");
+            s.nextLine();
+            return;
+        }
+
+        if (doctorIndex < 0 || doctorIndex >= availableDoctors.size()) {
+            System.out.println("❌ Invalid doctor selection.");
+            return;
+        }
+
+        Doctor selectedDoctor = availableDoctors.get(doctorIndex);
+
+        // Verify doctor is still on duty (real-time check)
+        if (!isDoctorCurrentlyOnDuty(selectedDoctor.getDoctorId())) {
+            System.out.println("❌ Sorry, Dr. " + selectedDoctor.getFullName() + " is no longer available.");
+            System.out.println("💡 Please select another doctor or try again later.");
+            return;
+        }
+
+        // Get appointment date
+        System.out.print("\nEnter the date for your appointment (YYYY-MM-DD): ");
+        String appointmentDate = s.nextLine();
+        
+        // Validate date format
+        try {
+            LocalDate.parse(appointmentDate);
         } catch (Exception e) {
             System.out.println("❌ Invalid date format. Please use YYYY-MM-DD format.");
+            return;
         }
-    }
-}
 
-private ArrayList<String> getAvailableTimeSlots(String date, String specialist) {
-    ArrayList<String> availableSlots = new ArrayList<>();
-    
-    try {
-        Connection conn = DatabaseConnect.getConnection();
+        // Get available time slots for this doctor and date
+        ArrayList<String> availableSlots = selectedDoctor.getAvailableTimeSlotsForDate(appointmentDate);
         
-        // Get all availability slots for doctors of this specialist on this date
-        String sql = "SELECT DISTINCT da.start_time, da.end_time FROM doctor_availability da " +
-                    "JOIN doctors d ON da.doctor_id = d.doctor_id " +
-                    "WHERE d.specialist = ? AND d.onDuty = true AND da.availability_date = ? " +
-                    "ORDER BY da.start_time";
+        if (availableSlots.isEmpty()) {
+            System.out.println("❌ No available time slots for Dr. " + selectedDoctor.getFullName() + " on " + appointmentDate);
+            System.out.println("💡 Possible reasons:");
+            System.out.println("   • Doctor hasn't set availability for this date");
+            System.out.println("   • All time slots are already booked");
+            System.out.println("   • Please try a different date");
+            return;
+        }
+
+        // Display available time slots
+        System.out.println("\n✅ Available time slots for Dr. " + selectedDoctor.getFullName() + " on " + appointmentDate + ":");
+        System.out.println("=".repeat(60));
         
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setString(1, specialist);
-        pstmt.setString(2, date);
+        displayAvailableTimeSlotsForBooking(availableSlots);
         
-        ResultSet rs = pstmt.executeQuery();
+        // Let patient select a time slot
+        System.out.print("\nSelect time slot number (1-" + availableSlots.size() + "): ");
+        int timeChoice = 0;
+        try {
+            timeChoice = s.nextInt() - 1;
+            s.nextLine(); // Consume newline
+        } catch (Exception e) {
+            System.out.println("❌ Invalid input.");
+            s.nextLine();
+            return;
+        }
         
-        while (rs.next()) {
-            String startTime = rs.getString("start_time");
-            String endTime = rs.getString("end_time");
-            
-            // Generate 15-minute slots within this availability window
-            LocalTime start = LocalTime.parse(startTime);
-            LocalTime end = LocalTime.parse(endTime);
-            
-            LocalTime current = start;
-            while (current.isBefore(end)) {
-                String timeSlot = current.toString();
-                
-                // Check if this time slot is not already booked
-                if (isTimeSlotAvailable(date, timeSlot, specialist)) {
-                    availableSlots.add(timeSlot);
-                }
-                
-                current = current.plusMinutes(15);
+        if (timeChoice < 0 || timeChoice >= availableSlots.size()) {
+            System.out.println("❌ Invalid time slot selection.");
+            return;
+        }
+        
+        String selectedTime = availableSlots.get(timeChoice);
+        
+        // Get symptoms/reason
+        System.out.print("Enter your symptoms or reason for the appointment: ");
+        String symptoms = s.nextLine();
+
+        // Final verification before booking
+        if (!isDoctorCurrentlyOnDuty(selectedDoctor.getDoctorId())) {
+            System.out.println("❌ Sorry, Dr. " + selectedDoctor.getFullName() + " just went off duty.");
+            System.out.println("💡 Please start the booking process again.");
+            return;
+        }
+
+        // Confirm booking details
+        System.out.println("\n=== APPOINTMENT CONFIRMATION ===");
+        System.out.println("Doctor: Dr. " + selectedDoctor.getFullName() + " (" + selectedDoctor.getSpecialist() + ") 🟢");
+        System.out.println("Date: " + appointmentDate);
+        System.out.println("Time: " + selectedTime);
+        System.out.println("Reason: " + symptoms);
+        System.out.print("\nConfirm booking? (Y/N): ");
+        
+        String confirm = s.nextLine().toUpperCase();
+        if (!confirm.equals("Y")) {
+            System.out.println("❌ Booking cancelled.");
+            return;
+        }
+
+        // Book the appointment
+        try {
+            Connection conn = DatabaseConnect.getConnection();
+            String sql = "INSERT INTO appointments (patient_id, doctor_id, appointment_date, appointment_time, symptoms, appointment_date_time) VALUES (?, ?, ?, ?, ?, ?)";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, this.getPatientId());
+            pstmt.setInt(2, selectedDoctor.getDoctorId());
+            pstmt.setString(3, appointmentDate);
+            pstmt.setString(4, selectedTime);
+            pstmt.setString(5, symptoms);
+            pstmt.setString(6, appointmentDate + " " + selectedTime + ":00");
+
+            int result = pstmt.executeUpdate();
+            if (result > 0) {
+                System.out.println("\n🎉 Appointment booked successfully!");
+                System.out.println("📋 Appointment Details:");
+                System.out.println("   Doctor: Dr. " + selectedDoctor.getFullName() + " 🟢");
+                System.out.println("   Specialist: " + selectedDoctor.getSpecialist());
+                System.out.println("   Date: " + appointmentDate);
+                System.out.println("   Time: " + selectedTime);
+                System.out.println("   Duration: 15 minutes");
+                System.out.println("\n💡 Important Notes:");
+                System.out.println("   • Please arrive 10 minutes early");
+                System.out.println("   • Bring a valid ID");
+                System.out.println("   • Your doctor is currently on duty ✅");
+            } else {
+                System.out.println("❌ Failed to book appointment.");
             }
+        } catch (Exception e) {
+            System.out.println("❌ Booking failed: " + e.getMessage());
+            e.printStackTrace();
         }
-        
-    } catch (SQLException e) {
-        System.out.println("❌ Error retrieving available time slots: " + e.getMessage());
-        e.printStackTrace();
     }
-    
-    return availableSlots;
-}
 
-private boolean isTimeSlotAvailable(String date, String time, String specialist) {
-    try {
-        Connection conn = DatabaseConnect.getConnection();
-        
-        // Check if there are any available doctors for this specialist at this time
-        String sql = "SELECT COUNT(*) FROM doctors d " +
-                    "JOIN doctor_availability da ON d.doctor_id = da.doctor_id " +
-                    "WHERE d.specialist = ? AND d.onDuty = true " +
-                    "AND da.availability_date = ? AND da.start_time <= ? AND da.end_time > ? " +
-                    "AND d.doctor_id NOT IN (" +
-                    "   SELECT doctor_id FROM appointments " +
-                    "   WHERE appointment_date = ? AND appointment_time = ?" +
-                    ")";
-        
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setString(1, specialist);
-        pstmt.setString(2, date);
-        pstmt.setString(3, time);
-        pstmt.setString(4, time);
-        pstmt.setString(5, date);
-        pstmt.setString(6, time);
-        
-        ResultSet rs = pstmt.executeQuery();
-        if (rs.next()) {
-            return rs.getInt(1) > 0;
+    private boolean isDoctorCurrentlyOnDuty(int doctorId) {
+        try {
+            Connection conn = DatabaseConnect.getConnection();
+            String sql = "SELECT onDuty FROM doctors WHERE doctor_id = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, doctorId);
+            ResultSet rs = pstmt.executeQuery();
+            
+            if (rs.next()) {
+                return rs.getBoolean("onDuty");
+            }
+        } catch (SQLException e) {
+            System.out.println("❌ Error checking doctor status: " + e.getMessage());
         }
-        
-    } catch (SQLException e) {
-        System.out.println("❌ Error checking time slot availability: " + e.getMessage());
-    }
-    
-    return false;
-}
-
-private boolean isTimeSlotStillAvailable(int doctorId, String date, String time) {
-    try {
-        Connection conn = DatabaseConnect.getConnection();
-        String sql = "SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND appointment_date = ? AND appointment_time = ?";
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setInt(1, doctorId);
-        pstmt.setString(2, date);
-        pstmt.setString(3, time);
-        
-        ResultSet rs = pstmt.executeQuery();
-        if (rs.next()) {
-            return rs.getInt(1) == 0;
-        }
-        
-    } catch (SQLException e) {
-        System.out.println("❌ Error checking appointment availability: " + e.getMessage());
-    }
-    
-    return false;
-}
-
-// Keep the existing checkTimeSlotAvailability method for backwards compatibility
-private boolean checkTimeSlotAvailability(int doctorId, String date, LocalTime requestedTime) {
-    try {
-        ScheduleBST scheduleBST = new ScheduleBST();
-
-        // Get all booked appointments for this doctor and date
-        Connection conn = DatabaseConnect.getConnection();
-        String sql = "SELECT appointment_time FROM appointments WHERE doctor_id = ? AND appointment_date = ?";
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setInt(1, doctorId);
-        pstmt.setString(2, date);
-        ResultSet rs = pstmt.executeQuery();
-
-        // Add all booked times to the BST
-        while (rs.next()) {
-            String timeStr = rs.getString("appointment_time");
-            String[] timeParts = timeStr.split(":");
-            int hour = Integer.parseInt(timeParts[0]);
-            int minute = Integer.parseInt(timeParts[1]);
-            LocalTime bookedTime = LocalTime.of(hour, minute);
-            scheduleBST.insert(bookedTime);
-        }
-
-        // Check if the requested time is available
-        String availability = scheduleBST.search(requestedTime);
-        return availability.equals("The current schedule is available");
-    } catch (Exception e) {
-        System.out.println("❌ Error checking schedule availability: " + e.getMessage());
         return false;
     }
-}
 
     private String getSpecialistByChoice(int choice) {
         switch (choice) {
@@ -638,41 +481,39 @@ private boolean checkTimeSlotAvailability(int doctorId, String date, LocalTime r
         return patients;
     }
 
-    // Add this method to the Patient.java class
-
-/**
- * Display available time slots in a formatted way for booking
- */
-private void displayAvailableTimeSlotsForBooking(ArrayList<String> availableSlots) {
-    if (availableSlots.isEmpty()) {
-        System.out.println("No available time slots found.");
-        return;
-    }
-    
-    System.out.println("Available Time Slots:");
-    System.out.println("-".repeat(30));
-    
-    for (int i = 0; i < availableSlots.size(); i++) {
-        String timeSlot = availableSlots.get(i);
-        
-        // Parse time to format it nicely
-        try {
-            LocalTime time = LocalTime.parse(timeSlot);
-            String formattedTime = time.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
-            
-            // Calculate end time (15 minutes later)
-            LocalTime endTime = time.plusMinutes(15);
-            String formattedEndTime = endTime.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
-            
-            System.out.printf("%2d. %s - %s (15 min slot)\n", 
-                (i + 1), formattedTime, formattedEndTime);
-        } catch (Exception e) {
-            // Fallback if time parsing fails
-            System.out.printf("%2d. %s\n", (i + 1), timeSlot);
+    /**
+     * Display available time slots in a formatted way for booking
+     */
+    private void displayAvailableTimeSlotsForBooking(ArrayList<String> availableSlots) {
+        if (availableSlots.isEmpty()) {
+            System.out.println("No available time slots found.");
+            return;
         }
+        
+        System.out.println("Available Time Slots:");
+        System.out.println("-".repeat(30));
+        
+        for (int i = 0; i < availableSlots.size(); i++) {
+            String timeSlot = availableSlots.get(i);
+            
+            // Parse time to format it nicely
+            try {
+                LocalTime time = LocalTime.parse(timeSlot);
+                String formattedTime = time.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+                
+                // Calculate end time (15 minutes later)
+                LocalTime endTime = time.plusMinutes(15);
+                String formattedEndTime = endTime.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+                
+                System.out.printf("%2d. %s - %s (15 min slot)\n", 
+                    (i + 1), formattedTime, formattedEndTime);
+            } catch (Exception e) {
+                // Fallback if time parsing fails
+                System.out.printf("%2d. %s\n", (i + 1), timeSlot);
+            }
+        }
+        
+        System.out.println("-".repeat(30));
+        System.out.println("💡 Each appointment slot is 15 minutes");
     }
-    
-    System.out.println("-".repeat(30));
-    System.out.println("💡 Each appointment slot is 15 minutes");
-}
 }

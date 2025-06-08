@@ -99,8 +99,19 @@ public class Main {
             return;
         }
 
-        Patient newPatient = new Patient(email, password, fullName, phoneNumber);
-        newPatient.register(email, password, fullName, phoneNumber);
+        Patient newPatient = new Patient(email, confirmPassword, fullName, phoneNumber);
+        boolean success = newPatient.register(email, confirmPassword, fullName, phoneNumber);
+        
+        if (success) {
+            System.out.println("🎉 Would you like to login now? (Y/N): ");
+            String loginNow = s.nextLine();
+            if (loginNow.equalsIgnoreCase("Y")) {
+                if (newPatient.login(email, confirmPassword)) {
+                    currentPatient = newPatient;
+                    patientDashboard();
+                }
+            }
+        }
     }
 
     public void registerDoctor() {
@@ -173,8 +184,19 @@ public class Main {
             return;
         }
 
-        Doctor newDoctor = new Doctor(email, password, fullName, phoneNumber, true, specialist);
-        newDoctor.register(email, password, fullName, phoneNumber, specialist, true);
+        Doctor newDoctor = new Doctor(email, confirmPassword, fullName, phoneNumber, true, specialist);
+        boolean success = newDoctor.register(email, confirmPassword, fullName, phoneNumber, specialist, true);
+        
+        if (success) {
+            System.out.println("🎉 Would you like to login now? (Y/N): ");
+            String loginNow = s.nextLine();
+            if (loginNow.equalsIgnoreCase("Y")) {
+                if (newDoctor.login(email, confirmPassword)) {
+                    currentDoctor = newDoctor;
+                    doctorDashboard();
+                }
+            }
+        }
     }
 
     public void registerPharmacist() {
@@ -206,8 +228,19 @@ public class Main {
             return;
         }
 
-        Pharmacist newPharmacist = new Pharmacist(email, password, fullName, phoneNumber, true);
-        newPharmacist.register(email, password, fullName, phoneNumber);
+        Pharmacist newPharmacist = new Pharmacist(email, confirmPassword, fullName, phoneNumber, true);
+        boolean success = newPharmacist.register(email, confirmPassword, fullName, phoneNumber);
+        
+        if (success) {
+            System.out.println("🎉 Would you like to login now? (Y/N): ");
+            String loginNow = s.nextLine();
+            if (loginNow.equalsIgnoreCase("Y")) {
+                if (newPharmacist.login(email, confirmPassword)) {
+                    currentPharmacist = newPharmacist;
+                    pharmacistDashboard();
+                }
+            }
+        }
     }
 
     // LOGIN METHODS
@@ -262,35 +295,13 @@ public class Main {
         System.out.print("Enter password: ");
         String password = s.nextLine();
 
-        try {
-            Connection conn = DatabaseConnect.getConnection();
-            String sql = "SELECT * FROM patients WHERE email = ? AND password = ?";
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, email);
-            pstmt.setString(2, password);
-
-            ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                currentPatient = new Patient(
-                        rs.getInt("patient_id"),
-                        rs.getString("email"),
-                        rs.getString("password"),
-                        rs.getString("full_name"),
-                        rs.getString("phone_number"));
-
-                System.out.println("✅ Login successful! Welcome, " + currentPatient.getFullName());
-                return true;
-            } else {
-                System.out.println("❌ Invalid credentials. Please try again.");
-                return false;
-            }
-
-        } catch (Exception e) {
-            System.out.println("❌ Login error: " + e.getMessage());
-            e.printStackTrace();
-            return false;
+        // Create a temporary patient object for login
+        Patient tempPatient = new Patient(email, password, "", "");
+        if (tempPatient.login(email, password)) {
+            currentPatient = tempPatient;
+            return true;
         }
+        return false;
     }
 
     public boolean loginDoctor() {
@@ -301,37 +312,13 @@ public class Main {
         System.out.print("Enter password: ");
         String password = s.nextLine();
 
-        try {
-            Connection conn = DatabaseConnect.getConnection();
-            String sql = "SELECT * FROM doctors WHERE email = ? AND password = ?";
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, email);
-            pstmt.setString(2, password);
-
-            ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                currentDoctor = new Doctor(
-                        rs.getInt("doctor_id"),
-                        rs.getString("email"),
-                        rs.getString("password"),
-                        rs.getString("full_name"),
-                        rs.getString("phone_number"),
-                        rs.getBoolean("onDuty"),
-                        rs.getString("specialist"));
-
-                System.out.println("✅ Login successful! Welcome, Dr. " + currentDoctor.getFullName());
-                return true;
-            } else {
-                System.out.println("❌ Invalid credentials. Please try again.");
-                return false;
-            }
-
-        } catch (Exception e) {
-            System.out.println("❌ Login error: " + e.getMessage());
-            e.printStackTrace();
-            return false;
+        // Create a temporary doctor object for login
+        Doctor tempDoctor = new Doctor(email, password, "", "", true, "");
+        if (tempDoctor.login(email, password)) {
+            currentDoctor = tempDoctor;
+            return true;
         }
+        return false;
     }
 
     public boolean loginPharmacist() {
@@ -342,36 +329,13 @@ public class Main {
         System.out.print("Enter password: ");
         String password = s.nextLine();
 
-        try {
-            Connection conn = DatabaseConnect.getConnection();
-            String sql = "SELECT * FROM pharmacists WHERE email = ? AND password = ?";
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, email);
-            pstmt.setString(2, password);
-
-            ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                currentPharmacist = new Pharmacist(
-                        rs.getInt("pharmacist_id"),
-                        rs.getString("email"),
-                        rs.getString("password"),
-                        rs.getString("full_name"),
-                        rs.getString("phone_number"),
-                        true);
-
-                System.out.println("✅ Login successful! Welcome, " + currentPharmacist.getFullName());
-                return true;
-            } else {
-                System.out.println("❌ Invalid credentials. Please try again.");
-                return false;
-            }
-
-        } catch (Exception e) {
-            System.out.println("❌ Login error: " + e.getMessage());
-            e.printStackTrace();
-            return false;
+        // Create a temporary pharmacist object for login
+        Pharmacist tempPharmacist = new Pharmacist(email, password, "", "", true);
+        if (tempPharmacist.login(email, password)) {
+            currentPharmacist = tempPharmacist;
+            return true;
         }
+        return false;
     }
 
     // DASHBOARDS
@@ -468,7 +432,8 @@ public class Main {
                     currentDoctor.updateDoctorProfile();
                     break;
                 case 3:
-                    currentDoctor.viewAppointments();
+                    // currentDoctor.viewAppointments(); // This method should be included in the full Doctor.java
+                    System.out.println("View appointments functionality - implement from original Doctor.java");
                     break;
                 case 4:
                     currentDoctor.setDoctorAvailability();
@@ -480,10 +445,11 @@ public class Main {
                     removeAvailabilityForDate();
                     break;
                 case 7:
-                    currentDoctor.toggleOnDutyStatus(); // New toggle functionality
+                    currentDoctor.toggleOnDutyStatus();
                     break;
                 case 8:
-                    currentDoctor.viewDetailedStatus(); // Enhanced status view
+                    // currentDoctor.viewDetailedStatus(); // This method should be included in the full Doctor.java
+                    System.out.println("View detailed status functionality - implement from original Doctor.java");
                     break;
                 case 9:
                     viewAllPatients();
@@ -505,15 +471,22 @@ public class Main {
         while (true) {
             System.out.println("\n" + "=".repeat(50));
             System.out.println("    PHARMACIST DASHBOARD - " + currentPharmacist.getFullName());
+            
+            // Show current on-duty status in dashboard header (similar to doctor)
+            String statusIndicator = currentPharmacist.isOnDuty() ? "🟢 ON DUTY" : "🔴 OFF DUTY";
+            System.out.println("    Status: " + statusIndicator);
             System.out.println("=".repeat(50));
+            
             System.out.println("1. View My Profile");
             System.out.println("2. Update My Profile");
             System.out.println("3. Process Prescriptions");
             System.out.println("4. View Medicine Inventory");
             System.out.println("5. Manage Medicine Queue");
             System.out.println("6. View Expired Medicines");
-            System.out.println("7. View All Pharmacists");
-            System.out.println("8. Logout");
+            System.out.println("7. Toggle On-Duty Status " + (currentPharmacist.isOnDuty() ? "(Currently: ON)" : "(Currently: OFF)"));
+            System.out.println("8. View Detailed Status");
+            System.out.println("9. View All Pharmacists");
+            System.out.println("10. Logout");
             System.out.println("=".repeat(50));
             System.out.print("Enter your choice: ");
 
@@ -547,9 +520,15 @@ public class Main {
                     viewExpiredMedicines();
                     break;
                 case 7:
-                    viewAllPharmacists();
+                    currentPharmacist.toggleOnDutyStatus();
                     break;
                 case 8:
+                    currentPharmacist.viewDetailedStatus();
+                    break;
+                case 9:
+                    viewAllPharmacists();
+                    break;
+                case 10:
                     currentPharmacist = null;
                     System.out.println("✅ Logged out successfully.");
                     return;
@@ -622,19 +601,22 @@ public class Main {
             return;
         }
 
-        System.out.printf("%-5s %-25s %-30s %-15s\n", "ID", "Name", "Email", "Phone");
-        System.out.println("-".repeat(80));
+        System.out.printf("%-5s %-25s %-30s %-15s %-12s\n", "ID", "Name", "Email", "Phone", "Status");
+        System.out.println("-".repeat(90));
 
         for (Pharmacist pharmacist : allPharmacists) {
-            System.out.printf("%-5d %-25s %-30s %-15s\n",
+            String statusText = pharmacist.isOnDuty() ? "🟢 ON DUTY" : "🔴 OFF DUTY";
+            System.out.printf("%-5d %-25s %-30s %-15s %-12s\n",
                     pharmacist.getPharmacistId(),
                     pharmacist.getFullName().length() > 24 ? pharmacist.getFullName().substring(0, 24)
                             : pharmacist.getFullName(),
                     pharmacist.getEmail().length() > 29 ? pharmacist.getEmail().substring(0, 29)
                             : pharmacist.getEmail(),
-                    pharmacist.getPhoneNumber());
+                    pharmacist.getPhoneNumber(),
+                    statusText);
         }
 
+        System.out.println("\n💡 Legend: 🟢 = Available for operations, 🔴 = Off duty");
         System.out.print("\nPress Enter to continue...");
         s.nextLine();
     }
@@ -704,118 +686,116 @@ public class Main {
         System.out.println();
     }
 
-    // Add this method to the Main.java class
-
-/**
- * Remove availability for a specific date
- */
-private void removeAvailabilityForDate() {
-    System.out.println("\n--- REMOVE AVAILABILITY ---");
-    
-    // Show current availability first
-    currentDoctor.viewMyAvailabilitySchedule();
-    
-    System.out.print("Enter the date to remove availability (YYYY-MM-DD): ");
-    String date = s.nextLine().trim();
-    
-    if (date.isEmpty()) {
-        System.out.println("❌ Date cannot be empty.");
-        return;
-    }
-    
-    // Validate date format
-    try {
-        LocalDate.parse(date);
-    } catch (Exception e) {
-        System.out.println("❌ Invalid date format. Please use YYYY-MM-DD format.");
-        return;
-    }
-    
-    // Check if availability exists for this date
-    if (!checkIfAvailabilityExists(date)) {
-        System.out.println("❌ No availability found for " + date);
-        return;
-    }
-    
-    // Check if there are any appointments on this date
-    if (hasAppointmentsOnDate(date)) {
-        System.out.println("⚠️ WARNING: There are existing appointments on " + date);
-        System.out.print("Removing availability will not cancel existing appointments. Continue? (Y/N): ");
-        String confirm = s.nextLine();
-        if (!confirm.equalsIgnoreCase("Y")) {
+    /**
+     * Remove availability for a specific date
+     */
+    private void removeAvailabilityForDate() {
+        System.out.println("\n--- REMOVE AVAILABILITY ---");
+        
+        // Show current availability first
+        currentDoctor.viewMyAvailabilitySchedule();
+        
+        System.out.print("Enter the date to remove availability (YYYY-MM-DD): ");
+        String date = s.nextLine().trim();
+        
+        if (date.isEmpty()) {
+            System.out.println("❌ Date cannot be empty.");
+            return;
+        }
+        
+        // Validate date format
+        try {
+            LocalDate.parse(date);
+        } catch (Exception e) {
+            System.out.println("❌ Invalid date format. Please use YYYY-MM-DD format.");
+            return;
+        }
+        
+        // Check if availability exists for this date
+        if (!checkIfAvailabilityExists(date)) {
+            System.out.println("❌ No availability found for " + date);
+            return;
+        }
+        
+        // Check if there are any appointments on this date
+        if (hasAppointmentsOnDate(date)) {
+            System.out.println("⚠️ WARNING: There are existing appointments on " + date);
+            System.out.print("Removing availability will not cancel existing appointments. Continue? (Y/N): ");
+            String confirm = s.nextLine();
+            if (!confirm.equalsIgnoreCase("Y")) {
+                System.out.println("Operation cancelled.");
+                return;
+            }
+        }
+        
+        System.out.print("Are you sure you want to remove availability for " + date + "? (Y/N): ");
+        String finalConfirm = s.nextLine();
+        
+        if (!finalConfirm.equalsIgnoreCase("Y")) {
             System.out.println("Operation cancelled.");
             return;
         }
-    }
-    
-    System.out.print("Are you sure you want to remove availability for " + date + "? (Y/N): ");
-    String finalConfirm = s.nextLine();
-    
-    if (!finalConfirm.equalsIgnoreCase("Y")) {
-        System.out.println("Operation cancelled.");
-        return;
-    }
-    
-    // Remove the availability
-    try {
-        Connection conn = DatabaseConnect.getConnection();
-        String sql = "DELETE FROM doctor_availability WHERE doctor_id = ? AND availability_date = ?";
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setInt(1, currentDoctor.getDoctorId());
-        pstmt.setString(2, date);
         
-        int result = pstmt.executeUpdate();
-        if (result > 0) {
-            System.out.println("✅ Availability removed successfully for " + date);
-        } else {
-            System.out.println("❌ Failed to remove availability. No matching record found.");
+        // Remove the availability
+        try {
+            Connection conn = DatabaseConnect.getConnection();
+            String sql = "DELETE FROM doctor_availability WHERE doctor_id = ? AND availability_date = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, currentDoctor.getDoctorId());
+            pstmt.setString(2, date);
+            
+            int result = pstmt.executeUpdate();
+            if (result > 0) {
+                System.out.println("✅ Availability removed successfully for " + date);
+            } else {
+                System.out.println("❌ Failed to remove availability. No matching record found.");
+            }
+            
+        } catch (SQLException e) {
+            System.out.println("❌ Error removing availability: " + e.getMessage());
+            e.printStackTrace();
         }
-        
-    } catch (SQLException e) {
-        System.out.println("❌ Error removing availability: " + e.getMessage());
-        e.printStackTrace();
     }
-}
 
-/**
- * Check if availability exists for a specific date
- */
-private boolean checkIfAvailabilityExists(String date) {
-    try {
-        Connection conn = DatabaseConnect.getConnection();
-        String sql = "SELECT COUNT(*) FROM doctor_availability WHERE doctor_id = ? AND availability_date = ?";
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setInt(1, currentDoctor.getDoctorId());
-        pstmt.setString(2, date);
-        
-        ResultSet rs = pstmt.executeQuery();
-        if (rs.next()) {
-            return rs.getInt(1) > 0;
+    /**
+     * Check if availability exists for a specific date
+     */
+    private boolean checkIfAvailabilityExists(String date) {
+        try {
+            Connection conn = DatabaseConnect.getConnection();
+            String sql = "SELECT COUNT(*) FROM doctor_availability WHERE doctor_id = ? AND availability_date = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, currentDoctor.getDoctorId());
+            pstmt.setString(2, date);
+            
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            System.out.println("❌ Error checking availability: " + e.getMessage());
         }
-    } catch (SQLException e) {
-        System.out.println("❌ Error checking availability: " + e.getMessage());
+        return false;
     }
-    return false;
-}
 
-/**
- * Check if doctor has appointments on a specific date
- */
-private boolean hasAppointmentsOnDate(String date) {
-    try {
-        Connection conn = DatabaseConnect.getConnection();
-        String sql = "SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND appointment_date = ?";
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        pstmt.setInt(1, currentDoctor.getDoctorId());
-        pstmt.setString(2, date);
-        
-        ResultSet rs = pstmt.executeQuery();
-        if (rs.next()) {
-            return rs.getInt(1) > 0;
+    /**
+     * Check if doctor has appointments on a specific date
+     */
+    private boolean hasAppointmentsOnDate(String date) {
+        try {
+            Connection conn = DatabaseConnect.getConnection();
+            String sql = "SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND appointment_date = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, currentDoctor.getDoctorId());
+            pstmt.setString(2, date);
+            
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            System.out.println("❌ Error checking appointments: " + e.getMessage());
         }
-    } catch (SQLException e) {
-        System.out.println("❌ Error checking appointments: " + e.getMessage());
+        return false;
     }
-    return false;
-}
 }

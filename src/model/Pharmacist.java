@@ -44,7 +44,7 @@ public class Pharmacist extends Staff {
         System.out.println("Name: " + this.getFullName());
         System.out.println("Email: " + this.getEmail());
         System.out.println("Phone: " + this.getPhoneNumber());
-        System.out.println("On Duty: " + (this.isOnDuty() ? "Yes" : "No"));
+        System.out.println("On Duty: " + (this.isOnDuty() ? "✅ Yes" : "❌ No"));
         System.out.println("Queue size: " + queue.size());
         System.out.println("=========================");
     }
@@ -72,14 +72,6 @@ public class Pharmacist extends Staff {
             phoneNumber = this.getPhoneNumber();
         }
 
-        System.out.println("Current On Duty Status: " + this.isOnDuty());
-        System.out.print("Are you on duty? (true/false, or press Enter to keep current): ");
-        String onDutyStr = s.nextLine();
-        boolean onDuty = this.isOnDuty();
-        if (!onDutyStr.trim().isEmpty()) {
-            onDuty = Boolean.parseBoolean(onDutyStr);
-        }
-
         try {
             Connection conn = DatabaseConnect.getConnection();
             String sql = "UPDATE pharmacists SET email = ?, full_name = ?, phone_number = ? WHERE pharmacist_id = ?";
@@ -94,7 +86,6 @@ public class Pharmacist extends Staff {
                 this.setEmail(email);
                 this.setFullName(fullName);
                 this.setPhoneNumber(phoneNumber);
-                this.setOnDuty(onDuty);
                 System.out.println("✅ Profile updated successfully!");
             } else {
                 System.out.println("❌ No pharmacist found with ID: " + this.pharmacistId);
@@ -106,7 +97,7 @@ public class Pharmacist extends Staff {
     }
 
     @Override
-    public void login(String email, String password) {
+    public boolean login(String email, String password) {
         try {
             Connection conn = DatabaseConnect.getConnection();
             String sql = "SELECT * FROM pharmacists WHERE email = ? AND password = ?";
@@ -121,25 +112,31 @@ public class Pharmacist extends Staff {
                 this.password = rs.getString("password");
                 this.fullName = rs.getString("full_name");
                 this.phoneNumber = rs.getString("phone_number");
-                System.out.println("Pharmacist login successful!");
+                this.onDuty = rs.getBoolean("onDuty");
+                System.out.println("✅ Pharmacist login successful! Welcome, " + this.fullName);
+                return true;
             } else {
-                System.out.println("Invalid credentials!");
+                System.out.println("❌ Invalid credentials! Please try again.");
+                return false;
             }
         } catch (SQLException e) {
+            System.out.println("❌ Login error: " + e.getMessage());
             e.printStackTrace();
+            return false;
         }
     }
 
     @Override
-    public void register(String email, String password, String fullName, String phoneNumber) {
+    public boolean register(String email, String password, String fullName, String phoneNumber) {
         try {
             Connection conn = DatabaseConnect.getConnection();
-            String sql = "INSERT INTO pharmacists (email, password, full_name, phone_number) VALUES (?, ?, ?, ?)";
+            String sql = "INSERT INTO pharmacists (email, password, full_name, phone_number, onDuty) VALUES (?, ?, ?, ?, ?)";
             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             pstmt.setString(1, email);
             pstmt.setString(2, password);
             pstmt.setString(3, fullName);
             pstmt.setString(4, phoneNumber);
+            pstmt.setBoolean(5, true); // Default onDuty status for new pharmacists
 
             int result = pstmt.executeUpdate();
             if (result > 0) {
@@ -151,10 +148,17 @@ public class Pharmacist extends Staff {
                 this.password = password;
                 this.fullName = fullName;
                 this.phoneNumber = phoneNumber;
-                System.out.println("Pharmacist registered successfully with ID: " + this.pharmacistId);
+                this.onDuty = true;
+                System.out.println("✅ Pharmacist registered successfully with ID: " + this.pharmacistId);
+                return true;
+            } else {
+                System.out.println("❌ Registration failed. Please try again.");
+                return false;
             }
         } catch (SQLException e) {
+            System.out.println("❌ Registration error: " + e.getMessage());
             e.printStackTrace();
+            return false;
         }
     }
 
@@ -162,16 +166,18 @@ public class Pharmacist extends Staff {
         for (Medicine medicine : medicines) {
             queue.enqueue(medicine);
         }
-        System.out.println("Medicines added to queue. Current queue size: " + queue.size());
+        System.out.println("✅ Medicines added to queue. Current queue size: " + queue.size());
     }
 
     public void processMedicines() {
-        System.out.println("Pharmacist " + getFullName() + " processing medicines:");
+        System.out.println("\n💊 Pharmacist " + getFullName() + " processing medicines:");
+        System.out.println("-".repeat(50));
         while (!queue.isEmpty()) {
             Medicine medicine = queue.dequeue();
-            System.out.println("- Processed: " + medicine.getMedicineName() + " (" + medicine.getDose() + ")");
+            System.out.println("✅ Processed: " + medicine.getMedicineName() + " (" + medicine.getDose() + ")");
         }
-        System.out.println("All medicines processed!");
+        System.out.println("-".repeat(50));
+        System.out.println("🎉 All medicines processed!");
     }
 
     public void processPrescriptions() {
@@ -215,7 +221,8 @@ public class Pharmacist extends Staff {
             }
 
             if (!hasPrescriptions) {
-                System.out.println("No pending prescriptions found.");
+                System.out.println("📋 No pending prescriptions found.");
+                System.out.println("💡 Check back later for new prescriptions to process.");
                 return;
             }
 
@@ -232,7 +239,7 @@ public class Pharmacist extends Staff {
             }
 
             if (selectedId == 0) {
-                System.out.println("Operation cancelled.");
+                System.out.println("⬅️ Operation cancelled.");
                 return;
             }
 
@@ -273,11 +280,11 @@ public class Pharmacist extends Staff {
                 String doctorName = rs.getString("doctor_name");
 
                 System.out.println("\n" + "=".repeat(50));
-                System.out.println("PROCESSING PRESCRIPTION #" + prescriptionId);
+                System.out.println("🔬 PROCESSING PRESCRIPTION #" + prescriptionId);
                 System.out.println("=".repeat(50));
-                System.out.println("Patient: " + patientName);
-                System.out.println("Doctor: " + doctorName);
-                System.out.println("Details: " + recipeDescription);
+                System.out.println("👤 Patient: " + patientName);
+                System.out.println("👨‍⚕️ Doctor: " + doctorName);
+                System.out.println("📝 Details: " + recipeDescription);
 
                 // Get medicines for this prescription
                 String medicinesSql = "SELECT * FROM medicines WHERE prescription_id = ?";
@@ -286,7 +293,7 @@ public class Pharmacist extends Staff {
                 ResultSet medicineRs = medicinesStmt.executeQuery();
 
                 List<Medicine> medicines = new ArrayList<>();
-                System.out.println("\nRequired Medicines:");
+                System.out.println("\n💊 Required Medicines:");
                 int count = 1;
 
                 boolean hasMedicines = false;
@@ -302,17 +309,18 @@ public class Pharmacist extends Staff {
                     Medicine medicine = new Medicine(medicineId, medicineName, usage, dosage, category, expiry);
                     medicines.add(medicine);
 
-                    System.out.println(count + ". " + medicineName + " - " + dosage +
-                            " (" + category + ") Expires: " + expiry);
+                    System.out.println("   " + count + ". " + medicineName + " - " + dosage +
+                            " (" + category + ") 📅 Expires: " + expiry);
                     count++;
                 }
 
                 if (!hasMedicines) {
-                    System.out.println("No specific medicines assigned to this prescription.");
-                    System.out.println("Prescription contains general instructions: " + recipeDescription);
+                    System.out.println("   📋 No specific medicines assigned to this prescription.");
+                    System.out.println("   📝 Prescription contains general instructions: " + recipeDescription);
                 }
 
-                System.out.print("\nDo you want to process this prescription? (Y/N): ");
+                System.out.println("\n" + "=".repeat(50));
+                System.out.print("🤔 Do you want to process this prescription? (Y/N): ");
                 String confirm = s.nextLine();
 
                 if (confirm.equalsIgnoreCase("Y")) {
@@ -340,11 +348,13 @@ public class Pharmacist extends Staff {
                                 updateMedStmt.executeUpdate();
                             }
                         }
+                        
+                        System.out.println("🎉 Prescription #" + prescriptionId + " completed by " + this.fullName);
                     } else {
                         System.out.println("❌ Failed to process prescription.");
                     }
                 } else {
-                    System.out.println("Operation cancelled.");
+                    System.out.println("⬅️ Operation cancelled.");
                 }
             } else {
                 System.out.println("❌ Prescription not found.");
@@ -375,9 +385,10 @@ public class Pharmacist extends Staff {
             ResultSet countRs = countStmt.executeQuery(countSql);
 
             if (countRs.next()) {
-                System.out.println("Total Medicines: " + countRs.getInt("total"));
-                System.out.println("Valid Medicines: " + countRs.getInt("valid"));
-                System.out.println("Expired Medicines: " + countRs.getInt("expired"));
+                System.out.println("📊 INVENTORY SUMMARY:");
+                System.out.println("   Total Medicines: " + countRs.getInt("total"));
+                System.out.println("   ✅ Valid Medicines: " + countRs.getInt("valid"));
+                System.out.println("   ❌ Expired Medicines: " + countRs.getInt("expired"));
             }
 
             // Get all categories
@@ -392,10 +403,10 @@ public class Pharmacist extends Staff {
 
             // Display inventory by category
             System.out.println("\n" + "=".repeat(50));
-            System.out.println("INVENTORY BY CATEGORY");
+            System.out.println("📋 INVENTORY BY CATEGORY");
 
             for (String category : categories) {
-                System.out.println("\nCategory: " + category);
+                System.out.println("\n🏷️ Category: " + category);
                 System.out.println("-".repeat(80));
                 System.out.printf("%-25s %-15s %-15s %-10s %-15s\n", 
                     "Medicine Name", "Dosage", "Expiry Date", "Status", "Assigned To");
@@ -422,13 +433,13 @@ public class Pharmacist extends Staff {
                             medicineName.length() > 24 ? medicineName.substring(0, 24) : medicineName,
                             dosage.length() > 14 ? dosage.substring(0, 14) : dosage,
                             expiry.toString(),
-                            isExpired ? "EXPIRED" : "VALID",
+                            isExpired ? "❌ EXPIRED" : "✅ VALID",
                             assignedTo.length() > 14 ? assignedTo.substring(0, 14) : assignedTo);
                 }
             }
 
             // Option to view details of a specific medicine
-            System.out.print("\nEnter medicine ID to view details (or 0 to return): ");
+            System.out.print("\n🔍 Enter medicine ID to view details (or 0 to return): ");
             int selectedId = 0;
             try {
                 selectedId = s.nextInt();
@@ -463,35 +474,39 @@ public class Pharmacist extends Staff {
 
             if (rs.next()) {
                 System.out.println("\n" + "=".repeat(50));
-                System.out.println("MEDICINE DETAILS");
+                System.out.println("💊 MEDICINE DETAILS");
                 System.out.println("=".repeat(50));
-                System.out.println("ID: " + rs.getInt("medicine_id"));
-                System.out.println("Name: " + rs.getString("medicine_name"));
-                System.out.println("Dosage: " + rs.getString("dose"));
-                System.out.println("Category: " + rs.getString("category"));
-                System.out.println("Usage: " + rs.getString("usage_instruction"));
-                System.out.println("Expiry Date: " + rs.getString("expired_date"));
+                System.out.println("🆔 ID: " + rs.getInt("medicine_id"));
+                System.out.println("💊 Name: " + rs.getString("medicine_name"));
+                System.out.println("⚖️ Dosage: " + rs.getString("dose"));
+                System.out.println("🏷️ Category: " + rs.getString("category"));
+                System.out.println("📋 Usage: " + rs.getString("usage_instruction"));
+                System.out.println("📅 Expiry Date: " + rs.getString("expired_date"));
 
                 LocalDate expiry = LocalDate.parse(rs.getString("expired_date"));
                 long daysToExpiry = ChronoUnit.DAYS.between(LocalDate.now(), expiry);
 
                 if (daysToExpiry < 0) {
-                    System.out.println("Status: EXPIRED " + Math.abs(daysToExpiry) + " days ago");
+                    System.out.println("⚠️ Status: ❌ EXPIRED " + Math.abs(daysToExpiry) + " days ago");
+                } else if (daysToExpiry <= 30) {
+                    System.out.println("⚠️ Status: 🟡 EXPIRES SOON (in " + daysToExpiry + " days)");
                 } else {
-                    System.out.println("Status: VALID (Expires in " + daysToExpiry + " days)");
+                    System.out.println("✅ Status: ✅ VALID (Expires in " + daysToExpiry + " days)");
                 }
 
                 String patientName = rs.getString("patient_name");
                 String pharmacistName = rs.getString("pharmacist_name");
 
                 if (patientName != null) {
-                    System.out.println("Assigned to Patient: " + patientName);
+                    System.out.println("👤 Assigned to Patient: " + patientName);
                 }
                 if (pharmacistName != null) {
-                    System.out.println("Processed by Pharmacist: " + pharmacistName);
+                    System.out.println("👨‍⚕️ Processed by Pharmacist: " + pharmacistName);
                 }
 
                 System.out.println("=".repeat(50));
+                System.out.print("Press Enter to continue...");
+                s.nextLine();
             } else {
                 System.out.println("❌ Medicine not found.");
             }
@@ -499,6 +514,145 @@ public class Pharmacist extends Staff {
             System.out.println("❌ Error retrieving medicine details: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    // Toggle On-Duty Status (similar to Doctor)
+    public void toggleOnDutyStatus() {
+        System.out.println("\n--- TOGGLE ON-DUTY STATUS ---");
+        System.out.println("Current Status: " + (this.isOnDuty() ? "🟢 ON DUTY ✅" : "🔴 OFF DUTY ❌"));
+
+        String newStatus = this.isOnDuty() ? "OFF DUTY" : "ON DUTY";
+        String emoji = this.isOnDuty() ? "🔴❌" : "🟢✅";
+
+        System.out.println("You are about to change your status to: " + newStatus + " " + emoji);
+
+        if (!this.isOnDuty()) {
+            System.out.println("\n💡 Note: Setting yourself ON DUTY will:");
+            System.out.println("   • Make you available for prescription processing");
+            System.out.println("   • Allow you to handle medicine inventory");
+            System.out.println("   • Show you as active pharmacist");
+        } else {
+            System.out.println("\n⚠️ Warning: Setting yourself OFF DUTY will:");
+            System.out.println("   • Reduce availability for prescription processing");
+            System.out.println("   • Limit your active participation");
+            System.out.println("   • You can still access all functions");
+        }
+
+        System.out.print("\n🤔 Do you want to proceed with this change? (Y/N): ");
+        String confirm = s.nextLine().toUpperCase();
+
+        if (confirm.equals("Y")) {
+            boolean newOnDutyStatus = !this.isOnDuty();
+
+            if (updateOnDutyStatusInDatabase(newOnDutyStatus)) {
+                this.setOnDuty(newOnDutyStatus);
+                System.out.println("\n✅ Status updated successfully!");
+                System.out.println("Your new status: " + (newOnDutyStatus ? "🟢 ON DUTY ✅" : "🔴 OFF DUTY ❌"));
+
+                if (newOnDutyStatus) {
+                    System.out.println("🎉 You are now actively available for pharmacy operations!");
+                } else {
+                    System.out.println("💤 You are now in off-duty mode.");
+                    System.out.println("💡 You can turn ON DUTY anytime from this menu.");
+                }
+            } else {
+                System.out.println("❌ Failed to update status. Please try again.");
+            }
+        } else {
+            System.out.println("❌ Status change cancelled.");
+        }
+
+        System.out.print("\nPress Enter to continue...");
+        s.nextLine();
+    }
+
+    // Helper method to update on-duty status in database
+    private boolean updateOnDutyStatusInDatabase(boolean newStatus) {
+        try {
+            Connection conn = DatabaseConnect.getConnection();
+            String sql = "UPDATE pharmacists SET onDuty = ? WHERE pharmacist_id = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setBoolean(1, newStatus);
+            pstmt.setInt(2, this.pharmacistId);
+
+            int result = pstmt.executeUpdate();
+            return result > 0;
+
+        } catch (SQLException e) {
+            System.out.println("❌ Database error: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // Enhanced method to view pharmacist's current status with more details
+    public void viewDetailedStatus() {
+        System.out.println("\n--- MY DETAILED STATUS ---");
+        System.out.println("=".repeat(40));
+
+        // Basic info
+        System.out.println("👨‍⚕️ Pharmacist: " + this.getFullName());
+        System.out.println("📧 Email: " + this.getEmail());
+        System.out.println("📞 Phone: " + this.getPhoneNumber());
+
+        // On-duty status with visual indicator
+        String statusIcon = this.isOnDuty() ? "✅" : "❌";
+        String statusText = this.isOnDuty() ? "ON DUTY" : "OFF DUTY";
+        String statusColor = this.isOnDuty() ? "🟢" : "🔴";
+
+        System.out.println("\n📋 CURRENT STATUS:");
+        System.out.println("   Status: " + statusText + " " + statusIcon);
+        System.out.println("   Indicator: " + statusColor);
+        System.out.println("   Queue Size: " + queue.size() + " medicines");
+
+        // Get statistics
+        try {
+            Connection conn = DatabaseConnect.getConnection();
+
+            // Count total prescriptions processed
+            String totalSql = "SELECT COUNT(*) FROM prescriptions WHERE pharmacist_id = ?";
+            PreparedStatement totalStmt = conn.prepareStatement(totalSql);
+            totalStmt.setInt(1, this.pharmacistId);
+            ResultSet totalRs = totalStmt.executeQuery();
+            int totalPrescriptions = totalRs.next() ? totalRs.getInt(1) : 0;
+
+            // Count pending prescriptions
+            String pendingSql = "SELECT COUNT(*) FROM prescriptions WHERE status IN ('PENDING', 'IN_PROGRESS')";
+            PreparedStatement pendingStmt = conn.prepareStatement(pendingSql);
+            ResultSet pendingRs = pendingStmt.executeQuery();
+            int pendingPrescriptions = pendingRs.next() ? pendingRs.getInt(1) : 0;
+
+            // Count medicines processed
+            String medicinesSql = "SELECT COUNT(*) FROM medicines WHERE pharmacist_id = ?";
+            PreparedStatement medicinesStmt = conn.prepareStatement(medicinesSql);
+            medicinesStmt.setInt(1, this.pharmacistId);
+            ResultSet medicinesRs = medicinesStmt.executeQuery();
+            int medicinesProcessed = medicinesRs.next() ? medicinesRs.getInt(1) : 0;
+
+            System.out.println("\n📊 STATISTICS:");
+            System.out.println("   Prescriptions Processed: " + totalPrescriptions);
+            System.out.println("   Pending Prescriptions (All): " + pendingPrescriptions);
+            System.out.println("   Medicines Processed: " + medicinesProcessed);
+
+            // Show impact of current status
+            System.out.println("\n💼 STATUS IMPACT:");
+            if (this.isOnDuty()) {
+                System.out.println("   ✅ Available for prescription processing");
+                System.out.println("   ✅ Can manage medicine inventory");
+                System.out.println("   ✅ Active in pharmacy operations");
+            } else {
+                System.out.println("   ⚠️ Limited availability for processing");
+                System.out.println("   ✅ Can still access all functions");
+                System.out.println("   💡 Consider going ON DUTY for full operations");
+            }
+
+        } catch (SQLException e) {
+            System.out.println("   ⚠️ Error retrieving statistics: " + e.getMessage());
+        }
+
+        System.out.println("=".repeat(40));
+        System.out.print("Press Enter to continue...");
+        s.nextLine();
     }
 
     // Static method to load all pharmacists
@@ -517,10 +671,10 @@ public class Pharmacist extends Staff {
                         rs.getString("password"),
                         rs.getString("full_name"),
                         rs.getString("phone_number"),
-                        true);
+                        rs.getBoolean("onDuty"));
                 pharmacists.add(pharmacist);
             }
-            System.out.println("Loaded " + pharmacists.size() + " pharmacists from database");
+            System.out.println("✅ Loaded " + pharmacists.size() + " pharmacists from database");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -532,7 +686,7 @@ public class Pharmacist extends Staff {
         System.out.println("Current queue size: " + queue.size());
         
         if (queue.isEmpty()) {
-            System.out.println("Queue is empty. Load medicines from prescriptions first.");
+            System.out.println("📋 Queue is empty. Load medicines from prescriptions first.");
             return;
         }
         
@@ -574,7 +728,7 @@ public class Pharmacist extends Staff {
     private void viewQueueContents() {
         System.out.println("\n--- QUEUE CONTENTS ---");
         if (queue.isEmpty()) {
-            System.out.println("Queue is empty.");
+            System.out.println("📋 Queue is empty.");
             return;
         }
         
@@ -582,9 +736,9 @@ public class Pharmacist extends Staff {
         // we'll show the queue size and next medicine
         Medicine nextMedicine = queue.peek();
         if (nextMedicine != null) {
-            System.out.println("Next medicine to process: " + nextMedicine.getMedicineName() + 
+            System.out.println("▶️ Next medicine to process: " + nextMedicine.getMedicineName() + 
                              " (" + nextMedicine.getDose() + ")");
-            System.out.println("Total medicines in queue: " + queue.size());
+            System.out.println("📊 Total medicines in queue: " + queue.size());
         }
     }
     
@@ -596,7 +750,7 @@ public class Pharmacist extends Staff {
         
         Medicine medicine = queue.dequeue();
         System.out.println("✅ Processed: " + medicine.getMedicineName() + " (" + medicine.getDose() + ")");
-        System.out.println("Remaining in queue: " + queue.size());
+        System.out.println("📊 Remaining in queue: " + queue.size());
     }
     
     private void clearQueue() {

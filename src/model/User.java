@@ -13,9 +13,10 @@ public abstract class User {
         this.phoneNumber = phoneNumber;
     }
 
+    // Abstract methods that must be implemented by all subclasses
     public abstract void displayInfo();
-    public abstract void login(String email, String password);
-    public abstract void register(String email, String password, String fullName, String phoneNumber);
+    public abstract boolean login(String email, String password);
+    public abstract boolean register(String email, String password, String fullName, String phoneNumber);
 
     // Getters and Setters
     public String getEmail() {
