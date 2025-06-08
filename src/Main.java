@@ -12,18 +12,20 @@ public class Main {
     Pharmacist currentPharmacist = null;
 
     public static void main(String[] args) {
-       
+
         Main mainApp = new Main();
         mainApp.menu();
     }
 
     // public String getEmoji(String emoji, String fallback) {
-    //     String term = System.getenv("TERM");
-    //     String termProgram = System.getenv("TERM_PROGRAM");
+    // String term = System.getenv("TERM");
+    // String termProgram = System.getenv("TERM_PROGRAM");
 
-    //     boolean supportsEmoji = (term != null && (term.contains("xterm") || term.contains("256color")))
-    //             || (termProgram != null && (termProgram.contains("iTerm") || termProgram.contains("vscode")));
-    //     return supportsEmoji ? emoji : fallback;
+    // boolean supportsEmoji = (term != null && (term.contains("xterm") ||
+    // term.contains("256color")))
+    // || (termProgram != null && (termProgram.contains("iTerm") ||
+    // termProgram.contains("vscode")));
+    // return supportsEmoji ? emoji : fallback;
     // }
 
     public void menu() {
@@ -149,7 +151,7 @@ public class Main {
         int choice = s.nextInt();
         switch (choice) {
             case 1:
-                if(loginPatient()){
+                if (loginPatient()) {
                     patientDashboard();
                 }
                 break;
@@ -211,7 +213,7 @@ public class Main {
 
     public boolean loginDoctor() {
         System.out.println("Logging in as Doctor...");
-         System.out.println("\n--- DOCTOR LOGIN ---");
+        System.out.println("\n--- DOCTOR LOGIN ---");
         System.out.print("Enter email: ");
         String email = s.nextLine();
         System.out.print("Enter password: ");
@@ -235,8 +237,7 @@ public class Main {
                         rs.getString("full_name"),
                         rs.getString("phone_number"),
                         rs.getBoolean("on_duty"),
-                        rs.getString("specialist")
-                );
+                        rs.getString("specialist"));
 
                 System.out.println("✅ Login successful! Welcome, " + currentDoctor.getFullName());
                 return true;
@@ -307,7 +308,7 @@ public class Main {
             System.out.println("1. View My Profile");
             System.out.println("2. Update My Profile");
             System.out.println("3. View Appointments");
-            System.out.println("4. Prescribe Medicine");
+            System.out.println("4. Set Availability");
             System.out.println("5. Logout");
             System.out.println("=".repeat(50));
 
@@ -324,6 +325,8 @@ public class Main {
                     currentDoctor.viewAppointments();
                     break;
                 case 4:
+                    currentDoctor.manageWeeklySchedule();
+                case 5:
                     currentDoctor = null;
                     System.out.println("✅ Logged out successfully.");
                     return;
@@ -332,7 +335,43 @@ public class Main {
             }
         }
     }
-    
+
+    public void pharmacistDashboard() {
+        while (true) {
+            System.out.println("\n" + "=".repeat(50));
+            System.out.println("    PHARMACIST DASHBOARD - " + currentPharmacist.getFullName());
+            System.out.println("=".repeat(50));
+            System.out.println("1. View My Profile");
+            System.out.println("2. Update My Profile");
+            System.out.println("3. Process Prescriptions");
+            System.out.println("4. View Medicine Inventory");
+            System.out.println("5. Logout");
+            System.out.println("=".repeat(50));
+
+            int choice = s.nextInt();
+
+            switch (choice) {
+                case 1:
+                    currentPharmacist.displayInfo();
+                    break;
+                case 2:
+                    currentPharmacist.updatePharmacistInfo();
+                    break;
+                case 3:
+                    currentPharmacist.processPrescriptions();
+                    break;
+                case 4:
+                    currentPharmacist.viewMedicineInventory();
+                    break;
+                case 5:
+                    currentPharmacist = null;
+                    System.out.println("✅ Logged out successfully.");
+                    return;
+                default:
+                    System.out.println("❌ Invalid option. Please try again.");
+            }
+        }
+    }
 
     public void logo() {
         System.out.println("                     *******************");

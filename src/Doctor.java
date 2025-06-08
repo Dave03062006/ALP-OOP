@@ -1,6 +1,6 @@
 import java.sql.*;
 import java.util.*;
-import java.util.List;
+import java.time.*;
 
 import javax.xml.crypto.Data;
 
@@ -9,6 +9,7 @@ public class Doctor extends Staff {
     protected String specialist;
     protected Medicine medicines;
     private Appointment currAppointment;
+    private Prescription prescription;
     Scanner s = new Scanner(System.in);
 
     //
@@ -184,6 +185,8 @@ public class Doctor extends Staff {
     }
 
     public void viewAppointments() {
+        this.doctorId = this.getDoctorId();
+        System.out.println("Viewing appointments for Doctor ID: " + this.doctorId);
         try {
             Connection conn = DatabaseConnect.getConnection();
             String sql = "SELECT * FROM appointments WHERE doctor_id = ?";
@@ -201,7 +204,7 @@ public class Doctor extends Staff {
                 System.out.println("-------------------------");
             }
             if (!rs.isBeforeFirst()) {
-                System.out.println("No appointments found for this doctor.");
+                System.out.println("No appointments found.");
             }
 
             System.out.println("Select an appointment ID to create a prescription or diagnose:");
@@ -232,6 +235,37 @@ public class Doctor extends Staff {
                 System.out.println("Description: " + rs.getString("description"));
                 System.out.println("-------------------------");
             }
+
+            if (!rs.isBeforeFirst()) {
+                System.out.println("No medicines found.");
+            }
+
+            System.out.println("Select a medicine ID to prescribe:");
+            int medicineId = s.nextInt();
+            sql = "SELECT * FROM medicines WHERE medicine_id = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, medicineId);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                String medicineName = rs.getString("medicine_name");
+                String dosage = rs.getString("dosage");
+                String description = rs.getString("description");
+
+                // Create a new prescription
+                this.prescription = new Prescription(currAppointment.getPatient(), currAppointment.getDoctor(),
+                        description, medicineName, dosage);
+                System.out.println("Prescription created successfully for appointment ID: "
+                        + appointment.getAppointmentId());
+                sql = "INSERT INTO prescriptions (prescription_id, doctor_id, patient_id, recipe_description) VALUES (?, ?, ?, ?);";
+                pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                pstmt.setInt(1, prescription.getPrescriptionId());
+                pstmt.setInt(2, appointment.getDoctor().getDoctorId());
+                pstmt.setInt(3, appointment.getPatient().getPatientId());
+                pstmt.setString(4, prescription.getReceiptDescription());
+                int result = pstmt.executeUpdate();
+            } else {
+                System.out.println("Invalid medicine ID.");
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -255,6 +289,7 @@ public class Doctor extends Staff {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        prescription.saveToDatabase();
     }
 
     // Get all doctors from database
@@ -328,6 +363,131 @@ public class Doctor extends Staff {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void setWorkHours(String dayOfWeek, LocalTime startTime, LocalTime endTime) {
+        try {
+            Connection conn = DatabaseConnect.getConnection();
+            // First check if a schedule already exists for this doctor and day
+            String checkSql = "SELECT * FROM doctor_schedule WHERE doctor_id = ? AND day_of_week = ?";
+            PreparedStatement checkStmt = conn.prepareStatement(checkSql);
+            checkStmt.setInt(1, this.doctorId);
+            checkStmt.setString(2, dayOfWeek);
+            ResultSet rs = checkStmt.executeQuery();
+
+            if (rs.next()) {
+                // Update existing schedule
+                String updateSql = "UPDATE doctor_schedule SET start_time = ?, end_time = ? WHERE doctor_id = ? AND day_of_week = ?";
+                PreparedStatement updateStmt = conn.prepareStatement(updateSql);
+                updateStmt.setString(1, startTime.toString());
+                updateStmt.setString(2, endTime.toString());
+                updateStmt.setInt(3, this.doctorId);
+                updateStmt.setString(4, dayOfWeek);
+                int result = updateStmt.executeUpdate();
+                if (result > 0) {
+                    System.out.println("Schedule updated for " + dayOfWeek);
+                }
+            } else {
+                // Insert new schedule
+                String insertSql = "INSERT INTO doctor_schedule (doctor_id, day_of_week, start_time, end_time) VALUES (?, ?, ?, ?)";
+                PreparedStatement insertStmt = conn.prepareStatement(insertSql);
+                insertStmt.setInt(1, this.doctorId);
+                insertStmt.setString(2, dayOfWeek);
+                insertStmt.setString(3, startTime.toString());
+                insertStmt.setString(4, endTime.toString());
+                int result = insertStmt.executeUpdate();
+                if (result > 0) {
+                    System.out.println("New schedule set for " + dayOfWeek);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void manageWeeklySchedule() {
+        System.out.println("\n--- Set Weekly Schedule ---");
+        String[] daysOfWeek = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+
+        for (String day : daysOfWeek) {
+            System.out.println("\nSetting hours for " + day);
+            System.out.println("Do you want to set hours for this day? (Y/N)");
+            String response = s.next().toUpperCase();
+
+            if (response.equals("Y")) {
+                System.out.println("Enter start time (HH:MM format):");
+                String startTimeStr = s.next();
+                System.out.println("Enter end time (HH:MM format):");
+                String endTimeStr = s.next();
+
+                try {
+                    LocalTime startTime = LocalTime.parse(startTimeStr);
+                    LocalTime endTime = LocalTime.parse(endTimeStr);
+
+                    // Create a BST for available time slots
+                    ScheduleBST daySchedule = new ScheduleBST();
+
+                    // Add time slots in 15-minute increments
+                    LocalTime current = startTime;
+                    while (!current.isAfter(endTime.minusMinutes(15))) {
+                        daySchedule.insert(current);
+                        current = current.plusMinutes(15);
+                    }
+
+                    // Save to database
+                    setWorkHours(day, startTime, endTime);
+
+                    System.out.println("Schedule for " + day + " set from " + startTime + " to " + endTime);
+                } catch (Exception e) {
+                    System.out.println("Invalid time format. Please use HH:MM format.");
+                }
+            } else {
+                System.out.println("No hours set for " + day);
+                // Optionally remove any existing hours for this day
+                try {
+                    Connection conn = DatabaseConnect.getConnection();
+                    String sql = "DELETE FROM doctor_schedule WHERE doctor_id = ? AND day_of_week = ?";
+                    PreparedStatement pstmt = conn.prepareStatement(sql);
+                    pstmt.setInt(1, this.doctorId);
+                    pstmt.setString(2, day);
+                    pstmt.executeUpdate();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        System.out.println("\nWeekly schedule has been updated.");
+    }
+
+    public boolean isAvailableAt(String dayOfWeek, LocalTime time) {
+        try {
+            Connection conn = DatabaseConnect.getConnection();
+            String sql = "SELECT * FROM doctor_schedule WHERE doctor_id = ? AND day_of_week = ? AND ? BETWEEN start_time AND end_time";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, this.doctorId);
+            pstmt.setString(2, dayOfWeek);
+            pstmt.setString(3, time.toString());
+            ResultSet rs = pstmt.executeQuery();
+
+            // Also check if there's already an appointment at this time
+            if (rs.next()) {
+                String checkAppointmentSql = "SELECT * FROM appointments WHERE doctor_id = ? AND appointment_date = ? AND appointment_time = ?";
+                PreparedStatement appStmt = conn.prepareStatement(checkAppointmentSql);
+                appStmt.setInt(1, this.doctorId);
+                // You'd need to convert dayOfWeek to an actual date
+                // For demo purposes assuming we pass the actual date string
+                appStmt.setString(2, LocalDate.now().toString());
+                appStmt.setString(3, time.toString());
+                ResultSet appRs = appStmt.executeQuery();
+
+                // Doctor is available if there's a schedule entry but no appointment
+                return !appRs.next();
+            }
+            return false; // No schedule entry for this time
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 }

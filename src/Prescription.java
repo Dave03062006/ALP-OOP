@@ -10,6 +10,8 @@ public class Prescription {
     protected String receiptDescription;
 
     protected ArrayList<Medicine> prescribedMedicines;
+    protected String medicine_name;
+    protected String dose;
     protected Pharmacist assignedPharmacist;
     protected Appointment relatedAppointment;
 
@@ -170,12 +172,14 @@ public class Prescription {
     }
 
     // constructor for new prescriptions (before database insertionss)
-    public Prescription(Patient patient, Doctor doctor, String receiptDescription) {
+    public Prescription(Patient patient, Doctor doctor, String receiptDescription, String medicineNname, String dose) {
         this.patient = patient;
         this.doctor = doctor;
         this.receiptDescription = receiptDescription;
         this.status = PrescriptionStatus.PENDING;
         this.prescribedMedicines = new ArrayList<>();
+        this.medicine_name = medicineNname;
+        this.dose = dose;
         this.prescriptionId = prescriptionId;
 
     }
@@ -183,7 +187,7 @@ public class Prescription {
     // constructor with patient complaint taken from appointment booking
 
     public Prescription(Patient patient, Doctor doctor, String receiptDescription, String patientComplaint) {
-        this(patient, doctor, receiptDescription);
+        this(patient, doctor, receiptDescription, receiptDescription, patientComplaint);
         this.patientComplaint = patientComplaint;
     }
 

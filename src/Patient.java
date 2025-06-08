@@ -57,7 +57,7 @@ public class Patient extends User {
             }
 
         } catch (SQLException e) {
-            // TODO: handle exception
+
             e.printStackTrace();
         }
         System.out.println("Patient logged in with email: " + email);
@@ -145,30 +145,108 @@ public class Patient extends User {
         System.out.println("4. Neurologist");
         System.out.println("5. Back to Dashboard");
         int doctor_choice = s.nextInt();
+
+        if (doctor_choice == 5) {
+            return; // Return to dashboard
+        }
+
+        String specialist = getSpecialistByChoice(doctor_choice);
+
         System.out.println("\nEnter the date for your appointment (YYYY-MM-DD): ");
         String appointmentDate = s.next() + s.nextLine();
-        System.out.println("Enter the time for your appointment, each appointment has a 15 minute interval (12.15): ");
+        System.out.println("Enter the time for your appointment, each appointment has a 15 minute interval (HH.mm): ");
         String appointmentTime = s.next() + s.nextLine();
-        System.out.println("Enter your symptoms or reason for the appointment: ");
-        String symptoms = s.next() + s.nextLine();
+
         try {
+            // Convert input time string to LocalTime
+            String[] timeParts = appointmentTime.split("\\.");
+            int hour = Integer.parseInt(timeParts[0]);
+            int minute = Integer.parseInt(timeParts[1]);
+            java.time.LocalTime requestedTime = java.time.LocalTime.of(hour, minute);
+
+            // Check if the requested time slot is available using BST
+            boolean isAvailable = checkTimeSlotAvailabilityWithBST(specialist, appointmentDate, requestedTime);
+
+            if (!isAvailable) {
+                System.out.println("❌ This time slot is not available. Please choose another time.");
+                return;
+            }
+
+            System.out.println("Enter your symptoms or reason for the appointment: ");
+            String symptoms = s.next() + s.nextLine();
+
             Connection conn = DatabaseConnect.getConnection();
             String sql = "INSERT INTO appointments (patient_id, doctor_specialist, appointment_date, appointment_time, symptoms) VALUES (?, ?, ?, ?, ?)";
             PreparedStatement pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, this.getPatientId());
-            pstmt.setString(2, getSpecialistByChoice(doctor_choice));
+            pstmt.setString(2, specialist);
             pstmt.setString(3, appointmentDate);
             pstmt.setString(4, appointmentTime);
             pstmt.setString(5, symptoms);
 
             int result = pstmt.executeUpdate();
             if (result > 0) {
+                // If booking successful, also update the schedule table
+                markTimeSlotBooked(specialist, appointmentDate, appointmentTime);
                 System.out.println("✅ Appointment booked successfully!");
             } else {
                 System.out.println("❌ Failed to book appointment.");
             }
         } catch (Exception e) {
             System.out.println("❌ Booking failed: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // New method using BST to check availability
+    private boolean checkTimeSlotAvailabilityWithBST(String specialist, String date,
+            java.time.LocalTime requestedTime) {
+        try {
+            // Create a new BST for this specialist and date
+            ScheduleBST scheduleBST = new ScheduleBST();
+
+            // Get all booked appointments for this specialist and date
+            Connection conn = DatabaseConnect.getConnection();
+            String sql = "SELECT appointment_time FROM appointments WHERE doctor_specialist = ? AND appointment_date = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, specialist);
+            pstmt.setString(2, date);
+            ResultSet rs = pstmt.executeQuery();
+
+            // Add all booked times to the BST
+            while (rs.next()) {
+                String timeStr = rs.getString("appointment_time");
+                String[] timeParts = timeStr.split("\\.");
+                int hour = Integer.parseInt(timeParts[0]);
+                int minute = Integer.parseInt(timeParts[1]);
+                java.time.LocalTime bookedTime = java.time.LocalTime.of(hour, minute);
+                scheduleBST.insert(bookedTime);
+            }
+
+            // Check if the requested time is available
+            String availability = scheduleBST.search(requestedTime);
+            return availability.equals("The current schedule is available");
+        } catch (Exception e) {
+            System.out.println("❌ Error checking schedule availability: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // Updated method to mark time slot as booked
+    private void markTimeSlotBooked(String specialist, String date, String time) {
+        try {
+            Connection conn = DatabaseConnect.getConnection();
+            String sql = "INSERT INTO schedule (specialist, schedule_date, schedule_time, is_available) VALUES (?, ?, ?, false) "
+                    +
+                    "ON DUPLICATE KEY UPDATE is_available = false";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, specialist);
+            pstmt.setString(2, date);
+            pstmt.setString(3, time);
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("❌ Error updating schedule: " + e.getMessage());
             e.printStackTrace();
         }
     }
