@@ -324,9 +324,6 @@ public class Main {
                     currentDoctor.viewAppointments();
                     break;
                 case 4:
-                    currentDoctor.prescribeMedicine();
-                    break;
-                case 5:
                     currentDoctor = null;
                     System.out.println("✅ Logged out successfully.");
                     return;

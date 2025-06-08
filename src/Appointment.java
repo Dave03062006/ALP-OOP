@@ -70,4 +70,8 @@ public class Appointment {
     public void setAppointmentDateTime(LocalDateTime appointmentDateTime) {
         this.appointmentDateTime = appointmentDateTime;
     }
+
+    public Appointment gAppointment() {
+        return this;
+    }
 }
